@@ -16,6 +16,8 @@ import { z } from "zod";
 
 const materialFormSchema = insertMaterialSchema.extend({
   pricePerUnit: z.string().min(1, "Цена за единицу обязательна"),
+  consumptionRate: z.string().optional(),
+  weightPerUnit: z.string().optional(),
 });
 
 type MaterialFormData = z.infer<typeof materialFormSchema>;
@@ -50,6 +52,12 @@ export function MaterialEditModal({ isOpen, onClose, editingMaterial }: Material
       pricePerUnit: editingMaterial?.pricePerUnit || "",
       supplier: editingMaterial?.supplier || "",
       notes: editingMaterial?.notes || "",
+      imageUrl: editingMaterial?.imageUrl || "",
+      productUrl: editingMaterial?.productUrl || "",
+      consumptionRate: editingMaterial?.consumptionRate || "",
+      consumptionUnit: editingMaterial?.consumptionUnit || "",
+      weightPerUnit: editingMaterial?.weightPerUnit || "",
+      weightUnit: editingMaterial?.weightUnit || "",
     },
   });
 
@@ -104,6 +112,12 @@ export function MaterialEditModal({ isOpen, onClose, editingMaterial }: Material
       pricePerUnit: data.pricePerUnit,
       supplier: data.supplier || null,
       notes: data.notes || null,
+      imageUrl: data.imageUrl || null,
+      productUrl: data.productUrl || null,
+      consumptionRate: data.consumptionRate || null,
+      consumptionUnit: data.consumptionUnit || null,
+      weightPerUnit: data.weightPerUnit || null,
+      weightUnit: data.weightUnit || null,
     };
 
     if (editingMaterial) {
@@ -187,6 +201,120 @@ export function MaterialEditModal({ isOpen, onClose, editingMaterial }: Material
                         step="0.01"
                         placeholder="0.00"
                         {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="imageUrl"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Ссылка на картинку</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="url"
+                        placeholder="https://example.com/image.jpg"
+                        {...field}
+                        value={field.value || ""}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="productUrl"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Ссылка на товар</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="url"
+                        placeholder="https://shop.com/product"
+                        {...field}
+                        value={field.value || ""}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="consumptionRate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Расход на единицу измерения</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        step="0.001"
+                        placeholder="0.000"
+                        {...field}
+                        value={field.value || ""}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="consumptionUnit"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Единица измерения расхода</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="например: шт/м², кг/м³"
+                        {...field}
+                        value={field.value || ""}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="weightPerUnit"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Вес за единицу</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        step="0.001"
+                        placeholder="0.000"
+                        {...field}
+                        value={field.value || ""}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="weightUnit"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Единица измерения веса</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="например: кг/шт, кг/м"
+                        {...field}
+                        value={field.value || ""}
                       />
                     </FormControl>
                     <FormMessage />

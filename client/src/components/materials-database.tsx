@@ -8,11 +8,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { MaterialEditModal } from "./material-edit-modal";
+import { MaterialImportModal } from "./material-import-modal";
 import type { Material } from "@shared/schema";
 
 export function MaterialsDatabase() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [editingMaterial, setEditingMaterial] = useState<Material | null>(null);
   
   const { toast } = useToast();
@@ -80,13 +82,23 @@ export function MaterialsDatabase() {
             <Package className="h-5 w-5 text-primary" />
             <span>База данных материалов</span>
           </CardTitle>
-          <Button
-            onClick={handleAddMaterial}
-            className="bg-primary hover:bg-primary-dark text-white"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Добавить материал
-          </Button>
+          <div className="flex space-x-2">
+            <Button
+              onClick={() => setIsImportModalOpen(true)}
+              variant="outline"
+              className="text-primary border-primary hover:bg-primary hover:text-white"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Импорт
+            </Button>
+            <Button
+              onClick={handleAddMaterial}
+              className="bg-primary hover:bg-primary-dark text-white"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Добавить материал
+            </Button>
+          </div>
         </div>
 
         {/* Search */}
@@ -121,10 +133,11 @@ export function MaterialsDatabase() {
               <TableHeader>
                 <TableRow className="bg-gray-50 dark:bg-gray-700">
                   <TableHead className="text-left">Наименование</TableHead>
-                  <TableHead className="text-left">Единица измерения</TableHead>
-                  <TableHead className="text-right">Цена за единицу</TableHead>
+                  <TableHead className="text-left">Ед. изм.</TableHead>
+                  <TableHead className="text-right">Цена за ед.</TableHead>
                   <TableHead className="text-left">Поставщик</TableHead>
-                  <TableHead className="text-left">Примечания</TableHead>
+                  <TableHead className="text-left">Расход</TableHead>
+                  <TableHead className="text-left">Вес</TableHead>
                   <TableHead className="text-center">Действия</TableHead>
                 </TableRow>
               </TableHeader>
@@ -146,8 +159,17 @@ export function MaterialsDatabase() {
                     <TableCell className="text-sm">
                       {material.supplier || "—"}
                     </TableCell>
-                    <TableCell className="text-sm text-gray-500 dark:text-gray-400 max-w-xs truncate">
-                      {material.notes || "—"}
+                    <TableCell className="text-sm">
+                      {material.consumptionRate && material.consumptionUnit 
+                        ? `${parseFloat(material.consumptionRate).toLocaleString('ru-RU')} ${material.consumptionUnit}`
+                        : "—"
+                      }
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      {material.weightPerUnit && material.weightUnit 
+                        ? `${parseFloat(material.weightPerUnit).toLocaleString('ru-RU')} ${material.weightUnit}`
+                        : "—"
+                      }
                     </TableCell>
                     <TableCell>
                       <div className="flex justify-center space-x-2">
@@ -182,6 +204,12 @@ export function MaterialsDatabase() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         editingMaterial={editingMaterial}
+      />
+
+      {/* Material Import Modal */}
+      <MaterialImportModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
       />
     </Card>
   );

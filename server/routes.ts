@@ -1,5 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
+import multer from "multer";
+import * as XLSX from "xlsx";
 import { storage } from "./storage";
 import { 
   insertProjectSchema,
@@ -7,6 +9,14 @@ import {
   insertWorkItemSchema,
   insertWorkMaterialSchema
 } from "@shared/schema";
+
+// Configure multer for file uploads
+const upload = multer({ 
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 10 * 1024 * 1024 // 10MB limit
+  }
+});
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Projects
@@ -204,6 +214,157 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting work material:", error);
       res.status(500).json({ error: "Failed to delete work material" });
+    }
+  });
+
+  // Material Import
+  app.post("/api/materials/import", upload.single("file"), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: "No file uploaded" });
+      }
+
+      const workbook = XLSX.read(req.file.buffer, { type: "buffer" });
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      
+      // Convert to JSON, starting from row 2 (skip header)
+      const jsonData = XLSX.utils.sheet_to_json(worksheet, { 
+        header: 1,
+        defval: null 
+      });
+
+      // Skip header row
+      const dataRows = jsonData.slice(1);
+      
+      let importedCount = 0;
+      const errors: string[] = [];
+
+      for (let i = 0; i < dataRows.length; i++) {
+        const row = dataRows[i] as any[];
+        
+        // Skip empty rows
+        if (!row || row.length === 0 || !row[0]) continue;
+
+        try {
+          const materialData = {
+            name: row[0]?.toString() || "",
+            unit: row[1]?.toString() || "",
+            pricePerUnit: row[2]?.toString() || "0",
+            imageUrl: row[3]?.toString() || null,
+            productUrl: row[4]?.toString() || null,
+            consumptionRate: row[5]?.toString() || null,
+            consumptionUnit: row[6]?.toString() || null,
+            weightPerUnit: row[7]?.toString() || null,
+            weightUnit: row[8]?.toString() || null,
+            supplier: row[9]?.toString() || null,
+            notes: row[10]?.toString() || null,
+          };
+
+          // Validate required fields
+          if (!materialData.name || !materialData.unit || !materialData.pricePerUnit) {
+            errors.push(`Строка ${i + 2}: отсутствуют обязательные поля (название, единица измерения, цена)`);
+            continue;
+          }
+
+          const validatedData = insertMaterialSchema.parse(materialData);
+          await storage.createMaterial(validatedData);
+          importedCount++;
+        } catch (error) {
+          errors.push(`Строка ${i + 2}: ${error instanceof Error ? error.message : 'неизвестная ошибка'}`);
+        }
+      }
+
+      if (errors.length > 0) {
+        console.log("Import errors:", errors);
+      }
+
+      res.json({ 
+        imported: importedCount, 
+        errors: errors.length > 0 ? errors : undefined 
+      });
+    } catch (error) {
+      console.error("Error importing materials:", error);
+      res.status(500).json({ error: "Failed to import materials" });
+    }
+  });
+
+  // Download template
+  app.get("/api/materials/template", (req, res) => {
+    try {
+      const templateData = [
+        [
+          "Наименование*", 
+          "Единица измерения*", 
+          "Цена за единицу*", 
+          "Ссылка на картинку", 
+          "Ссылка на товар", 
+          "Расход на ед. изм.", 
+          "Единица расхода", 
+          "Вес за единицу", 
+          "Единица веса", 
+          "Поставщик", 
+          "Примечания"
+        ],
+        [
+          "Кирпич керамический", 
+          "шт", 
+          "12.50", 
+          "https://example.com/brick.jpg", 
+          "https://shop.com/brick", 
+          "510", 
+          "шт/м³", 
+          "2.5", 
+          "кг/шт", 
+          "ООО Стройматериалы", 
+          "Красный лицевой кирпич"
+        ],
+        [
+          "Цемент М400", 
+          "кг", 
+          "8.50", 
+          "", 
+          "", 
+          "350", 
+          "кг/м³", 
+          "", 
+          "", 
+          "Завод ЖБИ-1", 
+          "Портландцемент"
+        ]
+      ];
+
+      const workbook = XLSX.utils.book_new();
+      const worksheet = XLSX.utils.aoa_to_sheet(templateData);
+      
+      // Set column widths
+      worksheet['!cols'] = [
+        { width: 25 }, // Наименование
+        { width: 15 }, // Единица измерения
+        { width: 15 }, // Цена
+        { width: 30 }, // Ссылка на картинку
+        { width: 30 }, // Ссылка на товар
+        { width: 15 }, // Расход
+        { width: 15 }, // Единица расхода
+        { width: 15 }, // Вес
+        { width: 15 }, // Единица веса
+        { width: 20 }, // Поставщик
+        { width: 30 }, // Примечания
+      ];
+
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Материалы");
+      
+      const buffer = XLSX.write(workbook, { 
+        type: "buffer", 
+        bookType: "xlsx" 
+      });
+
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', 'attachment; filename=template_materials.xlsx');
+      res.send(buffer);
+    } catch (error) {
+      console.error("Error creating template:", error);
+      res.status(500).json({ error: "Failed to create template" });
     }
   });
 

@@ -19,6 +19,12 @@ export const materials = pgTable("materials", {
   pricePerUnit: decimal("price_per_unit", { precision: 10, scale: 2 }).notNull(),
   supplier: text("supplier"),
   notes: text("notes"),
+  imageUrl: text("image_url"), // ссылка на картинку
+  productUrl: text("product_url"), // ссылка на товар
+  consumptionRate: decimal("consumption_rate", { precision: 10, scale: 3 }), // расход на единицу измерения
+  consumptionUnit: text("consumption_unit"), // единица измерения расхода
+  weightPerUnit: decimal("weight_per_unit", { precision: 10, scale: 3 }), // вес за шт/м.пог и т.д
+  weightUnit: text("weight_unit"), // единица измерения веса (кг/шт, кг/м и т.д)
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
