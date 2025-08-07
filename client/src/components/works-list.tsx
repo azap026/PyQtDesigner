@@ -34,7 +34,7 @@ export function WorksList({
   const updateWorkItemMutation = useMutation({
     mutationFn: async ({ id, volume }: { id: string; volume: string }) => {
       return apiRequest("PUT", `/api/work-items/${id}`, {
-        volume: parseFloat(volume) || 0
+        volume: volume || "0"
       });
     },
     onSuccess: () => {

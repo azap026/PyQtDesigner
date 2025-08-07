@@ -7,6 +7,8 @@ import { WorkDetails } from "@/components/work-details";
 import { ProjectSummary } from "@/components/project-summary";
 import { WorkModal } from "@/components/work-modal";
 import { MaterialModal } from "@/components/material-modal";
+import { MaterialsDatabase } from "@/components/materials-database";
+import { WorksDatabase } from "@/components/works-database";
 import { useToast } from "@/hooks/use-toast";
 import type { ProjectWithWorkItems, WorkItem, Project } from "@shared/schema";
 
@@ -150,39 +152,70 @@ export default function Dashboard() {
             {/* Page Header */}
             <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4">
               <div>
-                <h2 className="text-lg font-semibold">Виды работ</h2>
+                <h2 className="text-lg font-semibold">
+                  {activeTab === "works" && "Виды работ"}
+                  {activeTab === "materials" && "Материалы"}
+                  {activeTab === "estimate" && "Смета"}
+                  {activeTab === "reports" && "Отчеты"}
+                  {activeTab === "works-db" && "База данных работ"}
+                  {activeTab === "materials-db" && "База данных материалов"}
+                </h2>
                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Управление видами работ и расчёт стоимости
+                  {activeTab === "works" && "Управление видами работ и расчёт стоимости"}
+                  {activeTab === "materials" && "Управление материалами проекта"}
+                  {activeTab === "estimate" && "Просмотр и экспорт сметы"}
+                  {activeTab === "reports" && "Отчёты и аналитика"}
+                  {activeTab === "works-db" && "Управление справочником работ"}
+                  {activeTab === "materials-db" && "Управление справочником материалов"}
                 </p>
               </div>
             </div>
 
             {/* Content */}
             <div className="flex-1 overflow-y-auto p-6">
-              {!currentProject ? (
+              {activeTab === "works" && (
+                !currentProject ? (
+                  <div className="flex items-center justify-center h-full">
+                    <div className="text-center text-gray-500 dark:text-gray-400">
+                      <h3 className="text-lg font-medium mb-2">Нет выбранного проекта</h3>
+                      <p>Выберите проект из списка выше</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
+                    <WorksList
+                      workItems={currentProject.workItems}
+                      selectedWorkId={selectedWorkId}
+                      onWorkSelect={handleWorkSelect}
+                      onAddWork={handleAddWork}
+                      onEditWork={handleEditWork}
+                      onCalculate={handleCalculate}
+                      projectId={currentProjectId}
+                    />
+
+                    <WorkDetails
+                      selectedWork={selectedWork}
+                      onAddMaterial={handleAddMaterial}
+                      projectId={currentProjectId}
+                    />
+                  </div>
+                )
+              )}
+
+              {activeTab === "materials-db" && (
+                <MaterialsDatabase />
+              )}
+
+              {activeTab === "works-db" && (
+                <WorksDatabase />
+              )}
+
+              {(activeTab === "materials" || activeTab === "estimate" || activeTab === "reports") && (
                 <div className="flex items-center justify-center h-full">
                   <div className="text-center text-gray-500 dark:text-gray-400">
-                    <h3 className="text-lg font-medium mb-2">Нет выбранного проекта</h3>
-                    <p>Выберите проект из списка выше</p>
+                    <h3 className="text-lg font-medium mb-2">Раздел в разработке</h3>
+                    <p>Этот раздел будет добавлен в следующих версиях</p>
                   </div>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
-                  <WorksList
-                    workItems={currentProject.workItems}
-                    selectedWorkId={selectedWorkId}
-                    onWorkSelect={handleWorkSelect}
-                    onAddWork={handleAddWork}
-                    onEditWork={handleEditWork}
-                    onCalculate={handleCalculate}
-                    projectId={currentProjectId}
-                  />
-
-                  <WorkDetails
-                    selectedWork={selectedWork}
-                    onAddMaterial={handleAddMaterial}
-                    projectId={currentProjectId}
-                  />
                 </div>
               )}
             </div>

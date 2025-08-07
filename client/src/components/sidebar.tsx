@@ -29,6 +29,11 @@ const navigationItems = [
   { id: "reports", label: "Отчеты", icon: BarChart3 },
 ];
 
+const settingsItems = [
+  { id: "works-db", label: "База работ", icon: Hammer },
+  { id: "materials-db", label: "База материалов", icon: Package },
+];
+
 export function Sidebar({
   activeTab,
   onTabChange,
@@ -91,6 +96,35 @@ export function Sidebar({
             );
           })}
         </nav>
+
+        {/* Settings */}
+        <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+          <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
+            Настройки
+          </h3>
+          <nav className="space-y-1">
+            {settingsItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = activeTab === item.id;
+              
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => onTabChange(item.id)}
+                  className={cn(
+                    "w-full px-3 py-2 rounded-md flex items-center space-x-3 text-sm font-medium transition-colors text-left",
+                    isActive
+                      ? "bg-primary text-white"
+                      : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                  )}
+                >
+                  <Icon className="h-4 w-4" />
+                  <span>{item.label}</span>
+                </button>
+              );
+            })}
+          </nav>
+        </div>
 
         {/* Export Actions */}
         <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">

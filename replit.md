@@ -7,6 +7,7 @@ A full-stack web application for construction cost estimation and project manage
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
+User prefers Russian language for all interface and communication.
 
 ## System Architecture
 
@@ -45,6 +46,8 @@ Preferred communication style: Simple, everyday language.
 ### Frontend Components Architecture
 - **Layout Components**: Header, Sidebar, Theme Provider
 - **Business Components**: Work modals, material modals, project summary
+- **Database Management**: Materials database, Works database with full CRUD
+- **Settings Interface**: Database management tabs with search and filtering
 - **UI Components**: Complete shadcn/ui component library
 - **State Management**: React Query for API state, React Context for UI state
 
@@ -86,3 +89,14 @@ Preferred communication style: Simple, everyday language.
 - **date-fns**: Date manipulation utilities
 - **nanoid**: ID generation
 - **ws**: WebSocket support for database connections
+
+## Recent Changes
+
+### January 2025
+- Added Settings menu with database management interfaces
+- Implemented Materials Database with full CRUD operations
+- Implemented Works Database with cross-project work management
+- Added search and filtering capabilities to database interfaces
+- Fixed data type issues with decimal fields in API
+- Russian localization for all interface elements
+- Enhanced sidebar navigation with Settings section
