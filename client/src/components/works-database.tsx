@@ -3,16 +3,18 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Edit, Trash2, Hammer, Search } from "lucide-react";
+import { Plus, Edit, Trash2, Hammer, Search, Upload } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { WorkTemplateModal } from "./work-template-modal";
+import { WorkImportModal } from "./work-import-modal";
 import type { WorkItem, Project } from "@shared/schema";
 
 export function WorksDatabase() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [editingWork, setEditingWork] = useState<WorkItem | null>(null);
   
   const { toast } = useToast();
@@ -106,13 +108,23 @@ export function WorksDatabase() {
             <Hammer className="h-5 w-5 text-primary" />
             <span>База данных работ</span>
           </CardTitle>
-          <Button
-            onClick={handleAddWork}
-            className="bg-primary hover:bg-primary-dark text-white"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Добавить работу
-          </Button>
+          <div className="flex space-x-2">
+            <Button
+              onClick={() => setIsImportModalOpen(true)}
+              variant="outline"
+              className="text-primary border-primary hover:bg-primary hover:text-white"
+            >
+              <Upload className="h-4 w-4 mr-2" />
+              Импорт Excel
+            </Button>
+            <Button
+              onClick={handleAddWork}
+              className="bg-primary hover:bg-primary-dark text-white"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Добавить работу
+            </Button>
+          </div>
         </div>
 
         {/* Search */}
@@ -221,6 +233,12 @@ export function WorksDatabase() {
         onClose={() => setIsModalOpen(false)}
         editingWork={editingWork}
         projects={projects}
+      />
+
+      {/* Work Import Modal */}
+      <WorkImportModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
       />
     </Card>
   );

@@ -368,6 +368,146 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Work Items Import
+  app.post("/api/work-items/import", upload.single("file"), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: "No file uploaded" });
+      }
+
+      const { projectId } = req.body;
+      if (!projectId) {
+        return res.status(400).json({ error: "Project ID is required" });
+      }
+
+      const workbook = XLSX.read(req.file.buffer, { type: "buffer" });
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      
+      // Convert to JSON, starting from row 2 (skip header)
+      const jsonData = XLSX.utils.sheet_to_json(worksheet, { 
+        header: 1,
+        defval: null 
+      });
+
+      // Skip header row
+      const dataRows = jsonData.slice(1);
+      
+      let importedCount = 0;
+      const errors: string[] = [];
+
+      for (let i = 0; i < dataRows.length; i++) {
+        const row = dataRows[i] as any[];
+        
+        // Skip empty rows
+        if (!row || row.length === 0 || !row[0]) continue;
+
+        try {
+          const workData = {
+            projectId: projectId,
+            name: row[0]?.toString() || "",
+            description: row[1]?.toString() || null,
+            unit: row[2]?.toString() || "",
+            pricePerUnit: row[3]?.toString() || "0",
+            costPrice: row[4]?.toString() || null,
+            volume: row[5]?.toString() || "0",
+          };
+
+          // Validate required fields
+          if (!workData.name || !workData.unit || !workData.pricePerUnit) {
+            errors.push(`Строка ${i + 2}: отсутствуют обязательные поля (название, единица измерения, цена)`);
+            continue;
+          }
+
+          const validatedData = insertWorkItemSchema.parse(workData);
+          await storage.createWorkItem(validatedData);
+          importedCount++;
+        } catch (error) {
+          errors.push(`Строка ${i + 2}: ${error instanceof Error ? error.message : 'неизвестная ошибка'}`);
+        }
+      }
+
+      if (errors.length > 0) {
+        console.log("Work import errors:", errors);
+      }
+
+      res.json({ 
+        imported: importedCount, 
+        errors: errors.length > 0 ? errors : undefined 
+      });
+    } catch (error) {
+      console.error("Error importing work items:", error);
+      res.status(500).json({ error: "Failed to import work items" });
+    }
+  });
+
+  // Work Items Template Download
+  app.get("/api/work-items/template", (req, res) => {
+    try {
+      const templateData = [
+        [
+          "Наименование*", 
+          "Описание", 
+          "Единица измерения*", 
+          "Цена за единицу*", 
+          "Себестоимость", 
+          "Объём"
+        ],
+        [
+          "Кладка кирпичных стен", 
+          "Кладка наружных стен из керамического кирпича", 
+          "м³", 
+          "4500.00", 
+          "3200.00", 
+          "12.5"
+        ],
+        [
+          "Устройство бетонного пола", 
+          "Заливка и выравнивание бетонного пола", 
+          "м²", 
+          "850.00", 
+          "620.00", 
+          "45.2"
+        ],
+        [
+          "Монтаж оконных блоков", 
+          "Установка пластиковых окон", 
+          "шт", 
+          "1200.00", 
+          "950.00", 
+          "8"
+        ]
+      ];
+
+      const workbook = XLSX.utils.book_new();
+      const worksheet = XLSX.utils.aoa_to_sheet(templateData);
+      
+      // Set column widths
+      worksheet['!cols'] = [
+        { width: 30 }, // Наименование
+        { width: 40 }, // Описание
+        { width: 20 }, // Единица измерения
+        { width: 20 }, // Цена за единицу
+        { width: 20 }, // Себестоимость
+        { width: 15 }, // Объём
+      ];
+
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Работы");
+      
+      const buffer = XLSX.write(workbook, { 
+        type: "buffer", 
+        bookType: "xlsx" 
+      });
+
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', 'attachment; filename=template_works.xlsx');
+      res.send(buffer);
+    } catch (error) {
+      console.error("Error creating work template:", error);
+      res.status(500).json({ error: "Failed to create work template" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
