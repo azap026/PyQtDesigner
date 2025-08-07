@@ -248,6 +248,7 @@ export function WorkModal({ isOpen, onClose, projectId, editingWork }: WorkModal
                           placeholder="Дополнительное описание работы"
                           rows={3}
                           {...field}
+                          value={field.value || ""}
                         />
                       </FormControl>
                       <FormMessage />

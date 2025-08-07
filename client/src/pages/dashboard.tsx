@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Header } from "@/components/header";
 import { Sidebar } from "@/components/sidebar";
@@ -8,7 +8,7 @@ import { ProjectSummary } from "@/components/project-summary";
 import { WorkModal } from "@/components/work-modal";
 import { MaterialModal } from "@/components/material-modal";
 import { useToast } from "@/hooks/use-toast";
-import type { ProjectWithWorkItems, WorkItem } from "@shared/schema";
+import type { ProjectWithWorkItems, WorkItem, Project } from "@shared/schema";
 
 export default function Dashboard() {
   const [currentProjectId, setCurrentProjectId] = useState<string>("");
@@ -21,7 +21,7 @@ export default function Dashboard() {
   const { toast } = useToast();
 
   // Get projects list for selector
-  const { data: projects = [] } = useQuery({
+  const { data: projects = [] } = useQuery<Project[]>({
     queryKey: ["/api/projects"],
   });
 
@@ -32,11 +32,11 @@ export default function Dashboard() {
   });
 
   // Auto-select first project if none selected
-  useState(() => {
+  useEffect(() => {
     if (!currentProjectId && projects.length > 0) {
       setCurrentProjectId(projects[0].id);
     }
-  });
+  }, [projects, currentProjectId]);
 
   const handleProjectChange = (projectId: string) => {
     setCurrentProjectId(projectId);
