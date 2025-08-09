@@ -183,18 +183,18 @@ export default function AreaWorkLinking({ projectAreas }: AreaWorkLinkingProps) 
 
       {/* Диалог настройки */}
       <Dialog open={isConfigDialogOpen} onOpenChange={setIsConfigDialogOpen}>
-        <DialogContent className="sm:max-w-[500px] max-h-[80vh] overflow-hidden p-0">
+        <DialogContent className="sm:max-w-[500px] max-h-[70vh] overflow-hidden p-0">
           <div className="flex flex-col h-full">
-            <DialogHeader className="px-6 py-4 border-b flex-shrink-0">
+            <DialogHeader className="px-4 py-3 border-b flex-shrink-0">
               <DialogTitle>Настройка привязки площадей</DialogTitle>
-              <DialogDescription>
+              <DialogDescription className="text-sm">
                 Настройте автоматическое заполнение объема работы на основе площадей помещений
               </DialogDescription>
             </DialogHeader>
             
             {selectedTask && (
               <>
-                <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+                <div className="flex-1 overflow-y-auto px-4 py-2 space-y-2">
                   <div>
                     <Label className="text-sm font-medium text-gray-700">Работа</Label>
                     <div className="mt-1 p-2 bg-gray-50 rounded text-sm">
@@ -275,21 +275,23 @@ export default function AreaWorkLinking({ projectAreas }: AreaWorkLinkingProps) 
                 </div>
                 
                 {/* Кнопки всегда видны внизу */}
-                <div className="border-t px-6 py-4 flex-shrink-0">
+                <div className="border-t px-4 py-2 flex-shrink-0 bg-gray-50">
                   <div className="flex justify-end gap-2">
                     <Button
                       variant="outline"
+                      size="sm"
                       onClick={() => setIsConfigDialogOpen(false)}
                     >
                       Отмена
                     </Button>
                     <Button 
+                      size="sm"
                       onClick={handleSaveConfig}
                       disabled={saveConfigMutation.isPending}
-                      className="bg-primary hover:bg-primary/90 text-white"
+                      className="bg-blue-600 hover:bg-blue-700 text-white"
                     >
-                      <Save className="h-4 w-4 mr-2" />
-                      {saveConfigMutation.isPending ? "Сохранение..." : "Сохранить"}
+                      <Save className="h-3 w-3 mr-1" />
+                      Сохранить
                     </Button>
                   </div>
                 </div>
