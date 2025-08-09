@@ -156,22 +156,24 @@ export function WorksEstimate({ projectId }: WorksEstimateProps) {
   });
 
   // Функция поиска изображения материала
-  const findMaterialImage = (materialName: string) => {
-    // Ищем точное совпадение
-    let foundMaterial = allMaterials.find((m: any) => 
-      m.name.toLowerCase() === materialName.toLowerCase()
-    );
-    
-    // Если точного совпадения нет, ищем по частичному совпадению
-    if (!foundMaterial) {
-      foundMaterial = allMaterials.find((m: any) => 
-        m.name.toLowerCase().includes(materialName.toLowerCase()) ||
-        materialName.toLowerCase().includes(m.name.toLowerCase())
+  const findMaterialImage = useMemo(() => {
+    return (materialName: string) => {
+      // Ищем точное совпадение
+      let foundMaterial = allMaterials.find((m: any) => 
+        m.name.toLowerCase() === materialName.toLowerCase()
       );
-    }
-    
-    return foundMaterial?.imageUrl || null;
-  };
+      
+      // Если точного совпадения нет, ищем по частичному совпадению
+      if (!foundMaterial) {
+        foundMaterial = allMaterials.find((m: any) => 
+          m.name.toLowerCase().includes(materialName.toLowerCase()) ||
+          materialName.toLowerCase().includes(m.name.toLowerCase())
+        );
+      }
+      
+      return foundMaterial?.imageUrl || null;
+    };
+  }, [allMaterials, currentData]); // Добавляем currentData как зависимость
 
   // Управление раскрытием разделов
   const toggleSection = (sectionId: number) => {
