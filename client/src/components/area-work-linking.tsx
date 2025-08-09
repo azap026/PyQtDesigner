@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import type { HierarchicalWorkStructure, AreaType, ProjectAreas } from "@shared/schema";
 import { calculateProjectAreas, getAreaByType, suggestAreaType, formatArea } from "@/utils/areaCalculations";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 
@@ -353,13 +353,16 @@ export function AreaWorkLinking({ roomsData, onAreaLinkingChange }: AreaWorkLink
 
       {/* Диалог настройки */}
       <Dialog open={isConfigDialogOpen} onOpenChange={setIsConfigDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Настройка привязки площадей</DialogTitle>
+            <DialogDescription>
+              Настройте автоматическое заполнение объема работы на основе площадей помещений
+            </DialogDescription>
           </DialogHeader>
           
           {selectedTask && (
-            <div className="space-y-4">
+            <div className="space-y-4 pb-4">
               <div>
                 <Label className="text-sm font-medium text-gray-700">Работа</Label>
                 <div className="mt-1 p-2 bg-gray-50 rounded text-sm">
@@ -447,7 +450,10 @@ export function AreaWorkLinking({ roomsData, onAreaLinkingChange }: AreaWorkLink
                 >
                   Отмена
                 </Button>
-                <Button onClick={handleSaveConfig}>
+                <Button 
+                  onClick={handleSaveConfig}
+                  className="bg-primary hover:bg-primary/90 text-white"
+                >
                   <Save className="h-4 w-4 mr-2" />
                   Сохранить
                 </Button>
