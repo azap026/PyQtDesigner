@@ -52,13 +52,7 @@ export default function AreaWorkLinking({ projectAreas }: AreaWorkLinkingProps) 
       areaType?: AreaType;
       areaMultiplier?: number;
     }) => {
-      return apiRequest("/api/area-configs", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(config),
-      });
+      return apiRequest("/api/area-configs", "POST", config);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/area-configs"] });
