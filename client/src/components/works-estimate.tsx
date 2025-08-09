@@ -47,63 +47,28 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
-// Данные из Excel файла
-const estimateData = {
-  sections: [
-    {
-      id: 1,
-      title: "1. Работы по потолкам (Демонтаж)",
-      works: [
-        {
-          stage: 1,
-          index: "1.1",
-          title: "Очистка потолка от масляной краски или клея",
-          unit: "м2",
-          quantity: 0,
-          costPrice: 230,
-          unitPrice: 336,
-          materials: [
-            { name: "Чашка алмазная по бетону Trio-Diamond Turbo 125х22,2 мм", unit: "м1", quantity: 0, unitPrice: 1529 },
-            { name: "Мешок для пылесоса Karcher (6.904-322.0) 12 л 4,6 л к модели WD 2 бумага (5 шт.)", unit: "м1", quantity: 0, unitPrice: 1504 },
-            { name: "Шпатель малярный Wenzo 100 мм с эргономичной ручкой и отверткой (684772)", unit: "м1", quantity: 0, unitPrice: 388 }
-          ]
-        },
-        {
-          stage: 1,
-          index: "1.2", 
-          title: "Очистка потолка от шпаклевки/водоимульсионной краски",
-          unit: "м2",
-          quantity: 0,
-          costPrice: 200,
-          unitPrice: 292,
-          materials: [
-            { name: "Чашка алмазная по бетону Trio-Diamond Turbo 125х22,2 мм", unit: "м1", quantity: 0, unitPrice: 1529 },
-            { name: "Зубило плоское SDS-plus КМ (815747) 40х250 мм", unit: "м1", quantity: 0, unitPrice: 139 },
-            { name: "Шпатель малярный Wenzo 100 мм с эргономичной ручкой и отверткой (684772)", unit: "м1", quantity: 0, unitPrice: 388 },
-            { name: "Мешок для пылесоса Karcher (6.904-322.0) 12 л 4,6 л к модели WD 2 бумага (5 шт.)", unit: "м1", quantity: 0, unitPrice: 1504 }
-          ]
-        }
-      ]
-    },
-    {
-      id: 2,
-      title: "2. Работы по стенам (Демонтаж)",
-      works: [
-        {
-          stage: 1,
-          index: "2.1",
-          title: "Демонтаж стен из ПГП",
-          unit: "м2",
-          quantity: 0,
-          costPrice: 280,
-          unitPrice: 409,
-          materials: [
-            { name: "Мешок для мусора 50 л 500х900 мм полипропиленовый зеленый", unit: "м1", quantity: 0, unitPrice: 13 }
-          ]
-        }
-      ]
-    }
-  ]
+// Загружаем полные данные из Excel файла
+import estimateDataJson from '../../../estimate-full-data.json';
+const estimateData = estimateDataJson as {
+  sections: Array<{
+    id: number;
+    title: string;
+    works: Array<{
+      stage: number;
+      index: string;
+      title: string;
+      unit: string;
+      quantity: number;
+      costPrice: number;
+      unitPrice: number;
+      materials: Array<{
+        name: string;
+        unit: string;
+        quantity: number;
+        unitPrice: number;
+      }>;
+    }>;
+  }>;
 };
 
 interface WorksEstimateProps {
@@ -113,7 +78,7 @@ interface WorksEstimateProps {
 export function WorksEstimate({ projectId }: WorksEstimateProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedSection, setSelectedSection] = useState<string>("all");
-  const [expandedSections, setExpandedSections] = useState<Set<number>>(new Set([1, 2]));
+  const [expandedSections, setExpandedSections] = useState<Set<number>>(new Set([1]));
   const [editingWork, setEditingWork] = useState<any>(null);
   const [newQuantity, setNewQuantity] = useState("");
   
@@ -189,7 +154,7 @@ export function WorksEstimate({ projectId }: WorksEstimateProps) {
                 Виды работ
               </CardTitle>
               <CardDescription>
-                Полная смета работ и материалов из Excel файла
+                {estimateData.sections.length} разделов, {estimateData.sections.reduce((sum, s) => sum + s.works.length, 0)} работ, {estimateData.sections.reduce((sum, s) => sum + s.works.reduce((workSum, w) => workSum + w.materials.length, 0), 0)} материалов
               </CardDescription>
             </div>
             <div className="flex gap-2">
