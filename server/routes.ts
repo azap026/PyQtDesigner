@@ -693,7 +693,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Hierarchical Work Structure API
   
   // Get hierarchical structure
-  app.get("/api/hierarchy", async (req, res) => {
+  // Интеграция работ с материалами
+app.post("/api/projects/:projectId/sync-hierarchy", async (req, res) => {
+  try {
+    const { projectId } = req.params;
+    const { syncWorksWithHierarchy, linkWorksToMaterials } = await import("./work-integration");
+    
+    // Синхронизируем работы с иерархической структурой
+    const syncResults = await syncWorksWithHierarchy(projectId);
+    
+    // Привязываем материалы к работам
+    const linkResults = await linkWorksToMaterials(projectId);
+    
+    res.json({
+      message: "Синхронизация завершена",
+      syncedWorks: syncResults.length,
+      linkedWorks: linkResults.length,
+      details: {
+        sync: syncResults,
+        links: linkResults
+      }
+    });
+  } catch (error) {
+    console.error("Sync hierarchy error:", error);
+    res.status(500).json({ error: "Ошибка синхронизации с иерархией" });
+  }
+});
+
+app.get("/api/hierarchy", async (req, res) => {
     try {
       const structure = await storage.getHierarchicalStructure();
       res.json(structure);

@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Card,
   CardContent,
@@ -25,7 +25,10 @@ import {
   Calculator,
   Package,
   HardHat,
+  RefreshCw,
+  Link,
 } from "lucide-react";
+import { apiRequest } from "@/lib/queryClient";
 import type { ProjectWithWorkItems } from "@shared/schema";
 
 interface DetailedEstimateProps {
@@ -35,30 +38,74 @@ interface DetailedEstimateProps {
 export function DetailedEstimate({ projectId }: DetailedEstimateProps) {
   const [projectTitle, setProjectTitle] = useState("Сметный расчет по объекту: г. Москва, Шмитовский проезд");
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: project, isLoading } = useQuery<ProjectWithWorkItems>({
     queryKey: ["/api/projects", projectId],
     enabled: !!projectId,
   });
 
-  // Группировка работ по разделам на основе иерархической структуры
+  // Синхронизация с иерархической структурой
+  const syncHierarchyMutation = useMutation({
+    mutationFn: async () => {
+      return apiRequest("POST", `/api/projects/${projectId}/sync-hierarchy`);
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/projects", projectId] });
+      toast({
+        title: "Синхронизация завершена",
+        description: `Синхронизировано работ: ${data.syncedWorks}, связано с материалами: ${data.linkedWorks}`,
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Ошибка синхронизации",
+        description: "Не удалось синхронизировать с иерархической структурой",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Группировка работ по разделам на основе иерархической структуры и кодов работ
   const groupedWorks = useMemo(() => {
     if (!project?.workItems) return {};
     
     const groups: Record<string, typeof project.workItems> = {};
     
     project.workItems.forEach(work => {
-      // Определяем раздел работы на основе названия или описания
-      let section = "Прочие работы";
+      // Используем sectionName из базы данных, если есть
+      let section = work.sectionName || "Прочие работы";
       
-      if (work.name.toLowerCase().includes("потолок") || work.name.toLowerCase().includes("демонтаж")) {
-        section = "Работы по потолкам (Демонтаж)";
-      } else if (work.name.toLowerCase().includes("штукатур")) {
-        section = "Демонтаж штукатурки с потолка";
-      } else if (work.name.toLowerCase().includes("стен")) {
-        section = "Работы по стенам";
-      } else if (work.name.toLowerCase().includes("пол")) {
-        section = "Работы по полам";
+      // Если нет sectionName, определяем раздел по коду работы
+      if (!work.sectionName && work.workCode) {
+        const codePrefix = work.workCode.split('.')[0];
+        switch (codePrefix) {
+          case "1":
+            section = "Работы по потолкам (Демонтаж)";
+            break;
+          case "2":
+            section = "Демонтаж конструкций";
+            break;
+          case "3":
+            section = "Работы по стенам";
+            break;
+          default:
+            section = "Прочие работы";
+        }
+      }
+      
+      // Если все еще нет раздела, определяем по названию
+      if (section === "Прочие работы") {
+        const workName = work.name.toLowerCase();
+        if (workName.includes("потолок") || workName.includes("демонтаж")) {
+          section = "Работы по потолкам (Демонтаж)";
+        } else if (workName.includes("штукатур")) {
+          section = "Демонтаж штукатурки с потолка";
+        } else if (workName.includes("стен")) {
+          section = "Работы по стенам";
+        } else if (workName.includes("пол")) {
+          section = "Работы по полам";
+        }
       }
       
       if (!groups[section]) {
@@ -136,10 +183,24 @@ export function DetailedEstimate({ projectId }: DetailedEstimateProps) {
                 Проект: {project.name}
               </CardDescription>
             </div>
-            <Button onClick={exportToExcel} className="ml-4">
-              <Download className="h-4 w-4 mr-2" />
-              Экспорт в Excel
-            </Button>
+            <div className="flex space-x-2 ml-4">
+              <Button 
+                onClick={() => syncHierarchyMutation.mutate()}
+                disabled={syncHierarchyMutation.isPending}
+                variant="outline"
+              >
+                {syncHierarchyMutation.isPending ? (
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Link className="h-4 w-4 mr-2" />
+                )}
+                Синхронизировать
+              </Button>
+              <Button onClick={exportToExcel}>
+                <Download className="h-4 w-4 mr-2" />
+                Экспорт в Excel
+              </Button>
+            </div>
           </div>
         </CardHeader>
       </Card>

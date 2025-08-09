@@ -38,6 +38,9 @@ export const workItems = pgTable("work_items", {
   pricePerUnit: decimal("price_per_unit", { precision: 10, scale: 2 }).notNull(),
   costPrice: decimal("cost_price", { precision: 10, scale: 2 }),
   volume: decimal("volume", { precision: 10, scale: 3 }).default("0"),
+  workCode: text("work_code"), // Код работы для связи с иерархической структурой (например: 2.9, 2.10)
+  sectionName: text("section_name"), // Название раздела работ
+  hierarchyTaskId: varchar("hierarchy_task_id"), // Связь с таблицей tasks из иерархии
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
@@ -175,6 +178,18 @@ export const tasksRelations = relations(tasks, ({ one }) => ({
     references: [sections.id],
   }),
 }));
+
+// Hierarchical types
+export type Section = typeof sections.$inferSelect;
+export type InsertSection = typeof sections.$inferInsert;
+export type Task = typeof tasks.$inferSelect;
+export type InsertTask = typeof tasks.$inferInsert;
+
+export type HierarchicalWorkStructure = {
+  sections: Section[];
+  totalSections: number;
+  totalTasks: number;
+};
 
 // New schemas (must be defined before types that reference them)
 export const insertSectionSchema = createInsertSchema(sections).omit({
