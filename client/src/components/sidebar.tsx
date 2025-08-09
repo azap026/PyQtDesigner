@@ -58,16 +58,14 @@ export function Sidebar({
           </Button>
           <Button
             onClick={onOpenProject}
-            variant="secondary"
-            className="w-full flex items-center justify-center space-x-2"
+            className="w-full flex items-center justify-center space-x-2 bg-yellow-400 hover:bg-yellow-500 text-black font-semibold"
           >
             <FolderOpen className="h-4 w-4" />
             <span>Открыть</span>
           </Button>
           <Button
             onClick={onSaveProject}
-            variant="secondary"
-            className="w-full flex items-center justify-center space-x-2"
+            className="w-full flex items-center justify-center space-x-2 bg-yellow-400 hover:bg-yellow-500 text-black font-semibold"
           >
             <Save className="h-4 w-4" />
             <span>Сохранить</span>
@@ -115,7 +113,7 @@ export function Sidebar({
                   className={cn(
                     "w-full px-3 py-2 rounded-md flex items-center space-x-3 text-sm font-medium transition-colors text-left",
                     isActive
-                      ? "bg-primary text-white"
+                      ? "bg-yellow-400 text-black font-semibold shadow-md"
                       : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
                   )}
                 >
