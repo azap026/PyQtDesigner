@@ -857,13 +857,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       ];
 
       // Создаём CSV для более надёжной работы с кодировкой
+      // Используем точку с запятой как разделитель (стандарт для русской локализации)
       const csvContent = templateData.map(row => row.map(cell => {
-        // Экранируем ячейки с запятыми или кавычками
-        if (cell.includes(',') || cell.includes('"') || cell.includes('\n')) {
+        // Экранируем ячейки с точками с запятой или кавычками
+        if (cell.includes(';') || cell.includes('"') || cell.includes('\n')) {
           return '"' + cell.replace(/"/g, '""') + '"';
         }
         return cell;
-      }).join(',')).join('\n');
+      }).join(';')).join('\n');
 
       res.setHeader('Content-Type', 'text/csv; charset=utf-8');
       res.setHeader('Content-Disposition', 'attachment; filename=template_hierarchy.csv');

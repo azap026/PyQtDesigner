@@ -92,8 +92,17 @@ export function parseHierarchicalExcel(buffer: Buffer): ParsedRecord[] {
     // Для CSV файлов - парсим как текст с правильной кодировкой
     const fileStr = buffer.toString('utf8');
     const lines = fileStr.split('\n').filter(line => line.trim().length > 0);
+    
+    // Автоопределение разделителя: проверяем первую строку
+    const firstLine = lines[0] || '';
+    const hasSemicolon = firstLine.includes(';');
+    const hasComma = firstLine.includes(',');
+    const delimiter = hasSemicolon ? ';' : ',';
+    
+    console.log('Определён разделитель:', delimiter === ';' ? 'точка с запятой' : 'запятая');
+    
     jsonData = lines.map(line => {
-      // Разделяем по запятым, учитывая кавычки
+      // Разделяем по найденному разделителю, учитывая кавычки
       const result: string[] = [];
       let current = '';
       let inQuotes = false;
@@ -102,7 +111,7 @@ export function parseHierarchicalExcel(buffer: Buffer): ParsedRecord[] {
         const char = line[i];
         if (char === '"') {
           inQuotes = !inQuotes;
-        } else if (char === ',' && !inQuotes) {
+        } else if (char === delimiter && !inQuotes) {
           result.push(current.trim());
           current = '';
         } else {
