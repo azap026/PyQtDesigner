@@ -139,7 +139,7 @@ export function RoomParametersTable({ onDataChange }: RoomParametersTableProps) 
       field: "height" as keyof RoomData,
     },
     {
-      label: "Оконные откосы",
+      label: "Оконные/дверные откосы",
       bg: "bg-white dark:bg-gray-800",
       type: "calculated" as const,
       calculator: calculateWindowSlopes,
@@ -283,7 +283,7 @@ export function RoomParametersTable({ onDataChange }: RoomParametersTableProps) 
         <ul className="space-y-1 text-gray-600 dark:text-gray-400">
           <li>• <strong>Площадь стен:</strong> Периметр × Высота</li>
           <li>• <strong>Площадь пола:</strong> Периметр</li>
-          <li>• <strong>Оконные откосы:</strong> 2 × (Сумма площадей всех окон)</li>
+          <li>• <strong>Оконные/дверные откосы:</strong> 2 × (Сумма площадей всех окон)</li>
         </ul>
       </div>
     </div>
