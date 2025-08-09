@@ -18,7 +18,11 @@ import {
   Edit2,
   Check,
   X,
-  Calculator
+  Calculator,
+  ChevronDown,
+  ChevronRight,
+  Plus,
+  Minus
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
@@ -30,6 +34,7 @@ export function HierarchyDatabase() {
   const [editValue, setEditValue] = useState("");
   const [isCoeffDialogOpen, setIsCoeffDialogOpen] = useState(false);
   const [coefficient, setCoefficient] = useState("");
+  const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set());
   const fileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -229,85 +234,139 @@ export function HierarchyDatabase() {
     }
   };
 
+  const toggleSection = (sectionId: string) => {
+    setCollapsedSections(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(sectionId)) {
+        newSet.delete(sectionId);
+      } else {
+        newSet.add(sectionId);
+      }
+      return newSet;
+    });
+  };
+
+  const expandAll = () => {
+    setCollapsedSections(new Set());
+  };
+
+  const collapseAll = () => {
+    if (!hierarchy?.sections) return;
+    const allSectionIds = new Set<string>();
+    
+    const collectIds = (sections: any[]) => {
+      sections.forEach(section => {
+        allSectionIds.add(section.id);
+        if (section.children) collectIds(section.children);
+      });
+    };
+    
+    collectIds(hierarchy.sections);
+    setCollapsedSections(allSectionIds);
+  };
+
   const renderSection = (section: any, level: number = 0) => {
     const indent = level * 20;
+    const isCollapsed = collapsedSections.has(section.id);
+    const hasChildren = (section.children && section.children.length > 0) || (section.tasks && section.tasks.length > 0);
+    
     return (
       <div key={section.id} className="space-y-2">
         <div 
-          className="flex items-center p-3 rounded-lg bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600"
+          className="flex items-center p-3 rounded-lg bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
           style={{ marginLeft: `${indent}px` }}
+          onClick={() => hasChildren && toggleSection(section.id)}
         >
+          {hasChildren ? (
+            isCollapsed ? (
+              <Plus className="h-4 w-4 text-gray-500 mr-2" />
+            ) : (
+              <Minus className="h-4 w-4 text-gray-500 mr-2" />
+            )
+          ) : (
+            <div className="w-4 h-4 mr-2" /> // Пустое место для выравнивания
+          )}
           <Folder className="h-4 w-4 text-blue-500 mr-2" />
           <span className="font-medium text-blue-700 dark:text-blue-300 mr-2">
             {section.displayIndex}
           </span>
           <span className="text-sm">{section.title}</span>
+          {hasChildren && (
+            <span className="ml-auto text-xs text-gray-500">
+              {isCollapsed ? 'Свернуто' : 'Развернуто'}
+            </span>
+          )}
         </div>
         
-        {/* Подразделы */}
-        {section.children?.map((child: any) => renderSection(child, level + 1))}
-        
-        {/* Работы */}
-        {section.tasks?.map((task: any) => (
-          <div 
-            key={task.id}
-            className="flex items-center p-2 rounded bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-600"
-            style={{ marginLeft: `${(level + 1) * 20}px` }}
-          >
-            <FileText className="h-4 w-4 text-green-500 mr-2" />
-            <span className="text-sm font-mono text-gray-600 dark:text-gray-400 mr-2">
-              {task.displayIndex}
-            </span>
-            <span className="text-sm flex-1">{task.title}</span>
-            <div className="flex items-center space-x-2 text-xs text-gray-500">
-              <Badge variant="outline">{task.unit}</Badge>
-              {editingTask === task.id ? (
-                <div className="flex items-center space-x-1">
-                  <Input
-                    type="number"
-                    step="0.01"
-                    value={editValue}
-                    onChange={(e) => setEditValue(e.target.value)}
-                    className="w-20 h-6 text-xs"
-                    placeholder="0.00"
-                  />
-                  <span className="text-xs">₽</span>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-6 w-6 p-0"
-                    onClick={() => handleSaveTask(task.id)}
-                    disabled={updateTaskMutation.isPending}
-                  >
-                    <Check className="h-3 w-3 text-green-600" />
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-6 w-6 p-0"
-                    onClick={handleCancelEdit}
-                  >
-                    <X className="h-3 w-3 text-red-600" />
-                  </Button>
+        {/* Показываем содержимое только если раздел развернут */}
+        {!isCollapsed && (
+          <>
+            {/* Подразделы */}
+            {section.children?.map((child: any) => renderSection(child, level + 1))}
+            
+            {/* Работы */}
+            {section.tasks?.map((task: any) => (
+              <div 
+                key={task.id}
+                className="flex items-center p-2 rounded bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-600"
+                style={{ marginLeft: `${(level + 1) * 20}px` }}
+              >
+                <FileText className="h-4 w-4 text-green-500 mr-2" />
+                <span className="text-sm font-mono text-gray-600 dark:text-gray-400 mr-2">
+                  {task.displayIndex}
+                </span>
+                <span className="text-sm flex-1">{task.title}</span>
+                <div className="flex items-center space-x-2 text-xs text-gray-500">
+                  <Badge variant="outline">{task.unit}</Badge>
+                  {editingTask === task.id ? (
+                    <div className="flex items-center space-x-1">
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={editValue}
+                        onChange={(e) => setEditValue(e.target.value)}
+                        className="w-20 h-6 text-xs"
+                        placeholder="0.00"
+                      />
+                      <span className="text-xs">₽</span>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-6 w-6 p-0"
+                        onClick={() => handleSaveTask(task.id)}
+                        disabled={updateTaskMutation.isPending}
+                      >
+                        <Check className="h-3 w-3 text-green-600" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-6 w-6 p-0"
+                        onClick={handleCancelEdit}
+                      >
+                        <X className="h-3 w-3 text-red-600" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center space-x-1">
+                      <span className="font-medium">
+                        {task.costPrice ? `${task.costPrice} ₽` : "Не указана"}
+                      </span>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-6 w-6 p-0"
+                        onClick={() => handleEditTask(task.id, task.costPrice || "")}
+                      >
+                        <Edit2 className="h-3 w-3 text-gray-400 hover:text-blue-600" />
+                      </Button>
+                    </div>
+                  )}
                 </div>
-              ) : (
-                <div className="flex items-center space-x-1">
-                  <span className="font-medium">
-                    {task.costPrice ? `${task.costPrice} ₽` : "Не указана"}
-                  </span>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-6 w-6 p-0"
-                    onClick={() => handleEditTask(task.id, task.costPrice || "")}
-                  >
-                    <Edit2 className="h-3 w-3 text-gray-400 hover:text-blue-600" />
-                  </Button>
-                </div>
-              )}
-            </div>
-          </div>
-        ))}
+              </div>
+            ))}
+          </>
+        )}
       </div>
     );
   };
@@ -529,10 +588,32 @@ export function HierarchyDatabase() {
       {/* Иерархическая структура */}
       <Card>
         <CardHeader>
-          <CardTitle>Структура работ</CardTitle>
-          <CardDescription>
-            Показано {filteredSections?.length || 0} из {hierarchy?.sections?.length || 0} корневых разделов
-          </CardDescription>
+          <div className="flex justify-between items-center">
+            <div>
+              <CardTitle>Структура работ</CardTitle>
+              <CardDescription>
+                Показано {filteredSections?.length || 0} из {hierarchy?.sections?.length || 0} корневых разделов
+              </CardDescription>
+            </div>
+            <div className="flex space-x-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={expandAll}
+                className="text-xs"
+              >
+                Развернуть все
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={collapseAll}
+                className="text-xs"
+              >
+                Свернуть все
+              </Button>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           {isLoading ? (
