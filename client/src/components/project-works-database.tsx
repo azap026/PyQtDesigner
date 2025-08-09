@@ -212,9 +212,9 @@ export function ProjectWorksDatabase({ projectId }: ProjectWorksDatabaseProps) {
     return Array.from(sectionSet).sort();
   }, [allWorks]);
 
-  // Фильтрация работ
-  const filteredWorks = useMemo(() => {
-    return allWorks.filter((work) => {
+  // Фильтрация и группировка работ по разделам
+  const groupedWorks = useMemo(() => {
+    const filtered = allWorks.filter((work) => {
       const matchesSearch = work.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         work.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (work.sectionName || "").toLowerCase().includes(searchTerm.toLowerCase());
@@ -224,7 +224,24 @@ export function ProjectWorksDatabase({ projectId }: ProjectWorksDatabaseProps) {
 
       return matchesSearch && matchesSection;
     });
+
+    // Группируем по разделам
+    const grouped = filtered.reduce((groups, work) => {
+      const sectionName = work.sectionName || "Без раздела";
+      if (!groups[sectionName]) {
+        groups[sectionName] = [];
+      }
+      groups[sectionName].push(work);
+      return groups;
+    }, {} as Record<string, any[]>);
+
+    return grouped;
   }, [allWorks, searchTerm, selectedSection]);
+
+  // Общее количество отфильтрованных работ
+  const filteredWorks = useMemo(() => {
+    return Object.values(groupedWorks).flat();
+  }, [groupedWorks]);
 
   // Подсчет общей стоимости
   const totalCost = useMemo(() => {
@@ -516,7 +533,6 @@ export function ProjectWorksDatabase({ projectId }: ProjectWorksDatabaseProps) {
                 <TableRow className="bg-gray-50 dark:bg-gray-900">
                   <TableHead className="w-12">№</TableHead>
                   <TableHead>Название работы</TableHead>
-                  <TableHead>Раздел</TableHead>
                   <TableHead className="text-center">Ед.изм</TableHead>
                   <TableHead className="text-center">Количество</TableHead>
                   <TableHead className="text-center">Цена за ед.</TableHead>
@@ -526,9 +542,9 @@ export function ProjectWorksDatabase({ projectId }: ProjectWorksDatabaseProps) {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredWorks.length === 0 ? (
+                {Object.keys(groupedWorks).length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center py-8 text-gray-500">
+                    <TableCell colSpan={8} className="text-center py-8 text-gray-500">
                       {searchTerm || selectedSection !== "all" ? 
                         "Работы не найдены по заданным критериям" : 
                         "Нет работ в базе. Загрузите работы через раздел 'База работ'."
@@ -536,87 +552,121 @@ export function ProjectWorksDatabase({ projectId }: ProjectWorksDatabaseProps) {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredWorks.map((work, index) => {
-                    const volume = parseFloat(work.volume || "0");
-                    const pricePerUnit = parseFloat(work.pricePerUnit || work.costPrice || "0");
-                    const total = volume * pricePerUnit;
-
-                    return (
-                      <TableRow key={work.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                        <TableCell className="font-medium">{index + 1}</TableCell>
-                        <TableCell>
-                          <div>
-                            <div className="font-medium">{work.name}</div>
-                            {work.description && (
-                              <div className="text-sm text-gray-500 mt-1">{work.description}</div>
-                            )}
-                          </div>
+                  Object.entries(groupedWorks).map(([sectionName, works], sectionIndex) => (
+                    <>
+                      {/* Заголовок раздела */}
+                      <TableRow key={`section-${sectionIndex}`} className="bg-blue-50 dark:bg-blue-950/20">
+                        <TableCell className="font-bold text-blue-700 dark:text-blue-300">
+                          {sectionIndex + 1}
                         </TableCell>
-                        <TableCell>
-                          <Badge variant="secondary" className="text-xs">
-                            {work.sectionName || "Без раздела"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-center">{work.unit}</TableCell>
-                        <TableCell className="text-center font-mono">
-                          {parseFloat(work.volume || "0").toFixed(2)}
-                        </TableCell>
-                        <TableCell className="text-center font-mono">
-                          ₽ {pricePerUnit.toFixed(2)}
-                        </TableCell>
-                        <TableCell className="text-center font-mono font-bold">
-                          ₽ {total.toLocaleString('ru-RU', { minimumFractionDigits: 2 })}
-                        </TableCell>
-                        <TableCell className="text-center">
-                          {work.isInProject ? (
-                            <Badge variant="default" className="bg-green-100 text-green-800">
-                              В проекте
-                            </Badge>
-                          ) : (
-                            <Badge variant="outline" className="text-gray-500">
-                              Не добавлена
-                            </Badge>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex gap-1">
-                            {work.isInProject ? (
-                              <>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleEditWork(work)}
-                                  className="h-8 w-8 p-0"
-                                  title="Редактировать"
-                                >
-                                  <Edit2 className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => deleteWorkMutation.mutate(work.projectWorkId)}
-                                  className="h-8 w-8 p-0 text-red-500 hover:text-red-700"
-                                  title="Удалить из проекта"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </>
-                            ) : (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => addWorkToProject(work)}
-                                className="h-8 w-8 p-0 text-blue-500 hover:text-blue-700"
-                                title="Добавить в проект"
-                              >
-                                <Plus className="h-4 w-4" />
-                              </Button>
-                            )}
-                          </div>
+                        <TableCell colSpan={7} className="font-bold text-blue-700 dark:text-blue-300">
+                          {sectionName}
                         </TableCell>
                       </TableRow>
-                    );
-                  })
+                      
+                      {/* Работы в разделе */}
+                      {works.map((work, workIndex) => {
+                        const volume = parseFloat(work.volume || "0");
+                        const pricePerUnit = parseFloat(work.pricePerUnit || work.costPrice || "0");
+                        const total = volume * pricePerUnit;
+
+                        return (
+                          <TableRow key={work.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                            <TableCell className="font-medium pl-8">
+                              {sectionIndex + 1}.{workIndex + 1}
+                            </TableCell>
+                            <TableCell>
+                              <div>
+                                <div className="font-medium">{work.name}</div>
+                                {work.description && (
+                                  <div className="text-sm text-gray-500 mt-1">{work.description}</div>
+                                )}
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-center">{work.unit}</TableCell>
+                            <TableCell className="text-center font-mono">
+                              {parseFloat(work.volume || "0").toFixed(2)}
+                            </TableCell>
+                            <TableCell className="text-center font-mono">
+                              ₽ {pricePerUnit.toFixed(2)}
+                            </TableCell>
+                            <TableCell className="text-center font-mono font-bold">
+                              ₽ {total.toLocaleString('ru-RU', { minimumFractionDigits: 2 })}
+                            </TableCell>
+                            <TableCell className="text-center">
+                              {work.isInProject ? (
+                                <Badge variant="default" className="bg-green-100 text-green-800">
+                                  В проекте
+                                </Badge>
+                              ) : (
+                                <Badge variant="outline" className="text-gray-500">
+                                  Не добавлена
+                                </Badge>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex gap-1">
+                                {work.isInProject ? (
+                                  <>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => handleEditWork(work)}
+                                      className="h-8 w-8 p-0"
+                                      title="Редактировать"
+                                    >
+                                      <Edit2 className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => deleteWorkMutation.mutate(work.projectWorkId)}
+                                      className="h-8 w-8 p-0 text-red-500 hover:text-red-700"
+                                      title="Удалить из проекта"
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </>
+                                ) : (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => addWorkToProject(work)}
+                                    className="h-8 w-8 p-0 text-blue-500 hover:text-blue-700"
+                                    title="Добавить в проект"
+                                  >
+                                    <Plus className="h-4 w-4" />
+                                  </Button>
+                                )}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                      
+                      {/* Итого по разделу */}
+                      <TableRow className="bg-gray-50 dark:bg-gray-800/50 border-b-2">
+                        <TableCell></TableCell>
+                        <TableCell className="font-medium text-gray-700 dark:text-gray-300">
+                          Итого по разделу "{sectionName}":
+                        </TableCell>
+                        <TableCell></TableCell>
+                        <TableCell className="text-center font-mono font-bold">
+                          {works.reduce((total, work) => total + parseFloat(work.volume || "0"), 0).toFixed(2)}
+                        </TableCell>
+                        <TableCell></TableCell>
+                        <TableCell className="text-center font-mono font-bold">
+                          ₽ {works.reduce((total, work) => {
+                            const volume = parseFloat(work.volume || "0");
+                            const pricePerUnit = parseFloat(work.pricePerUnit || work.costPrice || "0");
+                            return total + (volume * pricePerUnit);
+                          }, 0).toLocaleString('ru-RU', { minimumFractionDigits: 2 })}
+                        </TableCell>
+                        <TableCell></TableCell>
+                        <TableCell></TableCell>
+                      </TableRow>
+                    </>
+                  ))
                 )}
               </TableBody>
             </Table>
