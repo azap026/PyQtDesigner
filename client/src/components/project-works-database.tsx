@@ -73,15 +73,17 @@ export function ProjectWorksDatabase({ projectId }: ProjectWorksDatabaseProps) {
   const queryClient = useQueryClient();
 
   // Загружаем проект с работами
-  const { data: project, isLoading } = useQuery<ProjectWithWorkItems>({
+  const { data: project, isLoading: isProjectLoading } = useQuery<ProjectWithWorkItems>({
     queryKey: ["/api/projects", projectId],
     enabled: !!projectId,
   });
 
-  // Загружаем иерархическую структуру для синхронизации
-  const { data: hierarchy } = useQuery({
+  // Загружаем иерархическую структуру для отображения всех работ
+  const { data: hierarchy, isLoading: isHierarchyLoading } = useQuery({
     queryKey: ["/api/hierarchy"],
   });
+
+  const isLoading = isProjectLoading || isHierarchyLoading;
 
   // Мутация для создания работы
   const createWorkMutation = useMutation({
@@ -154,22 +156,65 @@ export function ProjectWorksDatabase({ projectId }: ProjectWorksDatabaseProps) {
     });
   };
 
+  // Получаем все работы из иерархии с данными о количестве из проекта
+  const allWorks = useMemo(() => {
+    if (!(hierarchy as any)?.sections) return [];
+    
+    const works: any[] = [];
+    const projectWorksMap = new Map();
+    
+    // Создаем карту работ проекта для быстрого поиска
+    if (project?.workItems) {
+      project.workItems.forEach(work => {
+        if (work.hierarchyTaskId) {
+          projectWorksMap.set(work.hierarchyTaskId, work);
+        }
+      });
+    }
+    
+    // Добавляем все работы из иерархии
+    (hierarchy as any).sections.forEach((section: any) => {
+      if (section.tasks) {
+        section.tasks.forEach((task: any) => {
+          const projectWork = projectWorksMap.get(task.id);
+          
+          works.push({
+            id: task.id,
+            name: `${task.index} ${task.title}`,
+            unit: task.unit,
+            costPrice: task.costPrice,
+            sectionName: section.title,
+            description: task.description || "",
+            workCode: task.index,
+            hierarchyTaskId: task.id,
+            // Данные из проекта, если работа уже добавлена
+            projectWorkId: projectWork?.id || null,
+            volume: projectWork?.volume || "0",
+            pricePerUnit: projectWork?.pricePerUnit || task.costPrice,
+            isInProject: !!projectWork,
+            workMaterials: projectWork?.workMaterials || []
+          });
+        });
+      }
+    });
+    
+    return works;
+  }, [hierarchy, project]);
+
   // Получаем все разделы для фильтрации
   const sections = useMemo(() => {
-    if (!project?.workItems) return [];
+    if (!allWorks.length) return [];
     const sectionSet = new Set(
-      project.workItems
+      allWorks
         .map(work => work.sectionName || "Без раздела")
         .filter(Boolean)
     );
     return Array.from(sectionSet).sort();
-  }, [project?.workItems]);
+  }, [allWorks]);
 
   // Фильтрация работ
   const filteredWorks = useMemo(() => {
-    if (!project?.workItems) return [];
-
-    return project.workItems.filter((work) => {
+    return allWorks.filter((work) => {
       const matchesSearch = work.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         work.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (work.sectionName || "").toLowerCase().includes(searchTerm.toLowerCase());
@@ -179,7 +224,7 @@ export function ProjectWorksDatabase({ projectId }: ProjectWorksDatabaseProps) {
 
       return matchesSearch && matchesSection;
     });
-  }, [project?.workItems, searchTerm, selectedSection]);
+  }, [allWorks, searchTerm, selectedSection]);
 
   // Подсчет общей стоимости
   const totalCost = useMemo(() => {
@@ -189,6 +234,24 @@ export function ProjectWorksDatabase({ projectId }: ProjectWorksDatabaseProps) {
       return total + (volume * pricePerUnit);
     }, 0);
   }, [filteredWorks]);
+
+  // Добавить работу из иерархии в проект
+  const addWorkToProject = async (hierarchyWork: any) => {
+    const workData: InsertWorkItem = {
+      projectId: projectId,
+      name: hierarchyWork.name,
+      unit: hierarchyWork.unit,
+      pricePerUnit: hierarchyWork.costPrice,
+      costPrice: hierarchyWork.costPrice,
+      volume: "0",
+      description: hierarchyWork.description || null,
+      sectionName: hierarchyWork.sectionName,
+      workCode: hierarchyWork.workCode,
+      hierarchyTaskId: hierarchyWork.hierarchyTaskId,
+    };
+
+    createWorkMutation.mutate(workData);
+  };
 
   const handleAddWork = () => {
     if (!newWork.name.trim() || !newWork.unit.trim() || !newWork.costPrice) {
@@ -216,7 +279,13 @@ export function ProjectWorksDatabase({ projectId }: ProjectWorksDatabaseProps) {
     createWorkMutation.mutate(workData);
   };
 
-  const handleEditWork = (work: WorkItem) => {
+  const handleEditWork = (work: any) => {
+    if (!work.isInProject) {
+      // Если работа не в проекте, добавляем её
+      addWorkToProject(work);
+      return;
+    }
+    
     setEditingWork(work);
     setNewWork({
       name: work.name,
@@ -239,7 +308,7 @@ export function ProjectWorksDatabase({ projectId }: ProjectWorksDatabaseProps) {
     }
 
     updateWorkMutation.mutate({
-      id: editingWork.id,
+      id: editingWork.projectWorkId,
       name: newWork.name.trim(),
       unit: newWork.unit.trim(),
       pricePerUnit: newWork.costPrice,
@@ -452,16 +521,17 @@ export function ProjectWorksDatabase({ projectId }: ProjectWorksDatabaseProps) {
                   <TableHead className="text-center">Количество</TableHead>
                   <TableHead className="text-center">Цена за ед.</TableHead>
                   <TableHead className="text-center">Сумма</TableHead>
+                  <TableHead className="text-center">Статус</TableHead>
                   <TableHead className="text-center w-24">Действия</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredWorks.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8 text-gray-500">
+                    <TableCell colSpan={9} className="text-center py-8 text-gray-500">
                       {searchTerm || selectedSection !== "all" ? 
                         "Работы не найдены по заданным критериям" : 
-                        "Нет работ в проекте. Добавьте первую работу или синхронизируйтесь с базой работ."
+                        "Нет работ в базе. Загрузите работы через раздел 'База работ'."
                       }
                     </TableCell>
                   </TableRow>
@@ -497,24 +567,51 @@ export function ProjectWorksDatabase({ projectId }: ProjectWorksDatabaseProps) {
                         <TableCell className="text-center font-mono font-bold">
                           ₽ {total.toLocaleString('ru-RU', { minimumFractionDigits: 2 })}
                         </TableCell>
+                        <TableCell className="text-center">
+                          {work.isInProject ? (
+                            <Badge variant="default" className="bg-green-100 text-green-800">
+                              В проекте
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-gray-500">
+                              Не добавлена
+                            </Badge>
+                          )}
+                        </TableCell>
                         <TableCell>
                           <div className="flex gap-1">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleEditWork(work)}
-                              className="h-8 w-8 p-0"
-                            >
-                              <Edit2 className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => deleteWorkMutation.mutate(work.id)}
-                              className="h-8 w-8 p-0 text-red-500 hover:text-red-700"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                            {work.isInProject ? (
+                              <>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleEditWork(work)}
+                                  className="h-8 w-8 p-0"
+                                  title="Редактировать"
+                                >
+                                  <Edit2 className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => deleteWorkMutation.mutate(work.projectWorkId)}
+                                  className="h-8 w-8 p-0 text-red-500 hover:text-red-700"
+                                  title="Удалить из проекта"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </>
+                            ) : (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => addWorkToProject(work)}
+                                className="h-8 w-8 p-0 text-blue-500 hover:text-blue-700"
+                                title="Добавить в проект"
+                              >
+                                <Plus className="h-4 w-4" />
+                              </Button>
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>
