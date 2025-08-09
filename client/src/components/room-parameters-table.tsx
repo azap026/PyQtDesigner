@@ -253,7 +253,7 @@ export function RoomParametersTable({ onDataChange }: RoomParametersTableProps) 
         <table className="w-full border-collapse border border-gray-400 dark:border-gray-500 text-sm">
           <thead>
             <tr className="bg-gradient-to-r from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-600">
-              <th className="border border-gray-400 dark:border-gray-500 px-4 py-3 text-left font-bold text-gray-700 dark:text-gray-200 min-w-[200px]">
+              <th className="border border-gray-400 dark:border-gray-500 px-4 py-3 text-right font-bold text-gray-700 dark:text-gray-200 min-w-[200px]">
                 Габариты
               </th>
               {Array.from({ length: 12 }, (_, i) => (
