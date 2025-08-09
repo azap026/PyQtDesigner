@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
+import { useUndoRedoContext } from "@/contexts/UndoRedoContext";
 import { 
   Upload, 
   Download, 
@@ -42,6 +43,7 @@ export function HierarchyDatabase() {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { addAction } = useUndoRedoContext();
 
   const { data: hierarchy, isLoading } = useQuery<HierarchicalWorkStructure>({
     queryKey: ["/api/hierarchy"],
@@ -64,6 +66,18 @@ export function HierarchyDatabase() {
       return response.json();
     },
     onSuccess: (result: any) => {
+      // Добавляем действие в историю отмены
+      addAction({
+        description: `Импортирована иерархическая структура: ${result.imported.sections} разделов, ${result.imported.tasks} работ`,
+        undo: async () => {
+          const response = await fetch("/api/hierarchy/clear", { method: "DELETE" });
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          queryClient.invalidateQueries({ queryKey: ["/api/hierarchy"] });
+        }
+      });
+
       queryClient.invalidateQueries({ queryKey: ["/api/hierarchy"] });
       toast({
         title: "Импорт завершен",
@@ -111,7 +125,12 @@ export function HierarchyDatabase() {
   });
 
   const updateTaskMutation = useMutation({
-    mutationFn: async ({ taskId, costPrice }: { taskId: string; costPrice: string }) => {
+    mutationFn: async ({ taskId, costPrice, previousPrice, taskTitle }: { 
+      taskId: string; 
+      costPrice: string; 
+      previousPrice: string;
+      taskTitle: string;
+    }) => {
       const response = await fetch(`/api/hierarchy/tasks/${taskId}`, {
         method: "PATCH",
         headers: {
@@ -126,7 +145,25 @@ export function HierarchyDatabase() {
       
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
+      // Добавляем действие в историю отмены
+      addAction({
+        description: `Изменена себестоимость "${variables.taskTitle}" с ${variables.previousPrice}₽ на ${variables.costPrice}₽`,
+        undo: async () => {
+          const response = await fetch(`/api/hierarchy/tasks/${variables.taskId}`, {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ costPrice: variables.previousPrice }),
+          });
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          queryClient.invalidateQueries({ queryKey: ["/api/hierarchy"] });
+        }
+      });
+
       queryClient.invalidateQueries({ queryKey: ["/api/hierarchy"] });
       setEditingTask(null);
       setEditValue("");
@@ -161,7 +198,27 @@ export function HierarchyDatabase() {
       
       return response.json();
     },
-    onSuccess: (result) => {
+    onSuccess: (result, coefficient) => {
+      // Добавляем действие в историю отмены
+      addAction({
+        description: `Массовое обновление цен на ${((coefficient - 1) * 100).toFixed(1)}% для ${result.updated} работ`,
+        undo: async () => {
+          // Применяем обратный коэффициент
+          const reverseCoeff = 1 / coefficient;
+          const response = await fetch("/api/hierarchy/bulk-update", {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ coefficient: reverseCoeff }),
+          });
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          queryClient.invalidateQueries({ queryKey: ["/api/hierarchy"] });
+        }
+      });
+
       queryClient.invalidateQueries({ queryKey: ["/api/hierarchy"] });
       setIsCoeffDialogOpen(false);
       setCoefficient("");
@@ -214,7 +271,30 @@ export function HierarchyDatabase() {
       });
       return;
     }
-    updateTaskMutation.mutate({ taskId, costPrice: editValue });
+    
+    // Находим задачу для получения текущей цены и названия
+    const findTask = (sections: any[]): any => {
+      for (const section of sections) {
+        for (const task of section.tasks || []) {
+          if (task.id === taskId) return task;
+        }
+        if (section.children) {
+          const found = findTask(section.children);
+          if (found) return found;
+        }
+      }
+      return null;
+    };
+    
+    const task = hierarchy?.sections ? findTask(hierarchy.sections) : null;
+    if (!task) return;
+    
+    updateTaskMutation.mutate({ 
+      taskId, 
+      costPrice: editValue,
+      previousPrice: task.costPrice || "0",
+      taskTitle: task.title
+    });
   };
 
   const handleCancelEdit = () => {

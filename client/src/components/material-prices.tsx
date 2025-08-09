@@ -6,6 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { useUndoRedoContext } from "@/contexts/UndoRedoContext";
 import { 
   Search, 
   Edit2, 
@@ -30,6 +31,7 @@ export function MaterialPrices() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { addAction } = useUndoRedoContext();
 
   const { data: materials = [], isLoading } = useQuery<Material[]>({
     queryKey: ["/api/materials"],
@@ -63,10 +65,26 @@ export function MaterialPrices() {
   };
 
   const updatePriceMutation = useMutation({
-    mutationFn: async ({ id, price }: { id: string; price: number }) => {
+    mutationFn: async ({ id, price, previousPrice, materialName }: { 
+      id: string; 
+      price: number; 
+      previousPrice: string;
+      materialName: string;
+    }) => {
       return apiRequest("PATCH", `/api/materials/${id}`, { pricePerUnit: price.toString() });
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
+      // Добавляем действие в историю отмены
+      addAction({
+        description: `Изменена цена "${variables.materialName}" с ${variables.previousPrice}₽ на ${variables.price}₽`,
+        undo: async () => {
+          await apiRequest("PATCH", `/api/materials/${variables.id}`, { 
+            pricePerUnit: variables.previousPrice 
+          });
+          queryClient.invalidateQueries({ queryKey: ["/api/materials"] });
+        }
+      });
+
       queryClient.invalidateQueries({ queryKey: ["/api/materials"] });
       setEditingMaterial(null);
       setEditPrice("");
@@ -101,6 +119,17 @@ export function MaterialPrices() {
       return response.json();
     },
     onSuccess: (result: any) => {
+      // Добавляем действие в историю отмены
+      addAction({
+        description: `Импортировано ${result.imported} материалов из Excel`,
+        undo: async () => {
+          // Здесь можно реализовать логику отмены импорта
+          // Например, удаление всех добавленных материалов
+          await apiRequest("DELETE", "/api/materials/clear");
+          queryClient.invalidateQueries({ queryKey: ["/api/materials"] });
+        }
+      });
+
       queryClient.invalidateQueries({ queryKey: ["/api/materials"] });
       toast({
         title: "Импорт завершен",
@@ -180,7 +209,17 @@ export function MaterialPrices() {
       });
       return;
     }
-    updatePriceMutation.mutate({ id: materialId, price });
+    
+    // Находим материал для получения текущей цены и названия
+    const material = materials.find(m => m.id === materialId);
+    if (!material) return;
+    
+    updatePriceMutation.mutate({ 
+      id: materialId, 
+      price,
+      previousPrice: material.pricePerUnit || "0",
+      materialName: material.name
+    });
   };
 
   const handleCancelEdit = () => {

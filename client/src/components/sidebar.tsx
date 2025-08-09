@@ -10,9 +10,11 @@ import {
   FileText,
   FileSpreadsheet,
   DollarSign,
-  Settings
+  Settings,
+  Undo
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useUndoRedoContext } from "@/contexts/UndoRedoContext";
 
 interface SidebarProps {
   activeTab: string;
@@ -46,6 +48,8 @@ export function Sidebar({
   onExportPDF,
   onExportExcel,
 }: SidebarProps) {
+  const { undo, canUndo } = useUndoRedoContext();
+
   return (
     <aside className="w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 overflow-y-auto">
       <div className="p-4">
@@ -71,6 +75,18 @@ export function Sidebar({
           >
             <Save className="h-4 w-4" />
             <span>Сохранить</span>
+          </Button>
+          
+          {/* Кнопка отмены */}
+          <Button
+            onClick={undo}
+            disabled={!canUndo}
+            variant="outline"
+            className="w-full flex items-center justify-center space-x-2"
+            title="Отменить последнее действие (Ctrl+Z)"
+          >
+            <Undo className="h-4 w-4" />
+            <span>Отменить</span>
           </Button>
         </div>
 
