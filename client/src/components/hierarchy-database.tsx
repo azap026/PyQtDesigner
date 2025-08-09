@@ -17,14 +17,19 @@ import {
   FileText,
   Edit2,
   Check,
-  X
+  X,
+  Calculator
 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 import type { HierarchicalWorkStructure } from "@shared/schema";
 
 export function HierarchyDatabase() {
   const [searchQuery, setSearchQuery] = useState("");
   const [editingTask, setEditingTask] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
+  const [isCoeffDialogOpen, setIsCoeffDialogOpen] = useState(false);
+  const [coefficient, setCoefficient] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -131,6 +136,41 @@ export function HierarchyDatabase() {
     },
   });
 
+  const bulkUpdateMutation = useMutation({
+    mutationFn: async (coefficient: number) => {
+      const response = await fetch("/api/hierarchy/bulk-update", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ coefficient }),
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      return response.json();
+    },
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/hierarchy"] });
+      setIsCoeffDialogOpen(false);
+      setCoefficient("");
+      toast({
+        title: "Массовое обновление завершено",
+        description: `Обновлено ${result.updated} работ`,
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Ошибка",
+        description: "Не удалось выполнить массовое обновление",
+        variant: "destructive",
+      });
+      console.error("Bulk update error:", error);
+    },
+  });
+
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
@@ -171,6 +211,22 @@ export function HierarchyDatabase() {
   const handleCancelEdit = () => {
     setEditingTask(null);
     setEditValue("");
+  };
+
+  const handleBulkUpdate = () => {
+    const coeffValue = parseFloat(coefficient);
+    if (isNaN(coeffValue) || coeffValue <= 0) {
+      toast({
+        title: "Ошибка",
+        description: "Введите корректный коэффициент (число больше 0)",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (window.confirm(`Применить коэффициент ${coeffValue}% ко всем работам? Это действие нельзя отменить.`)) {
+      bulkUpdateMutation.mutate(coeffValue);
+    }
   };
 
   const renderSection = (section: any, level: number = 0) => {
@@ -351,6 +407,52 @@ export function HierarchyDatabase() {
               <span>Скачать шаблон</span>
             </Button>
             
+            <Dialog open={isCoeffDialogOpen} onOpenChange={setIsCoeffDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="secondary" className="flex items-center space-x-2">
+                  <Calculator className="h-4 w-4" />
+                  <span>Коэффициент цен</span>
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Массовое изменение себестоимости</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="coefficient">Коэффициент изменения (%)</Label>
+                    <Input
+                      id="coefficient"
+                      type="number"
+                      step="0.1"
+                      placeholder="Например: 110 для увеличения на 10%"
+                      value={coefficient}
+                      onChange={(e) => setCoefficient(e.target.value)}
+                    />
+                    <div className="text-sm text-gray-500">
+                      <p>• 110% = увеличение на 10%</p>
+                      <p>• 90% = уменьшение на 10%</p>
+                      <p>• 150% = увеличение в 1.5 раза</p>
+                    </div>
+                  </div>
+                  <div className="flex justify-end space-x-2">
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setIsCoeffDialogOpen(false)}
+                    >
+                      Отмена
+                    </Button>
+                    <Button 
+                      onClick={handleBulkUpdate}
+                      disabled={bulkUpdateMutation.isPending}
+                    >
+                      {bulkUpdateMutation.isPending ? "Применяю..." : "Применить"}
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+
             <Button 
               variant="destructive" 
               onClick={handleClearDatabase}

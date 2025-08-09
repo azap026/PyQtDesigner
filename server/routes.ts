@@ -4,6 +4,9 @@ import multer from "multer";
 import * as XLSX from "xlsx";
 import { storage } from "./storage";
 import { importHierarchicalStructure } from "./hierarchical-import";
+import { db } from "./db";
+import { tasks } from "@shared/schema";
+import { eq, isNotNull } from "drizzle-orm";
 import { 
   insertProjectSchema,
   insertMaterialSchema,
@@ -987,6 +990,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting task:", error);
       res.status(500).json({ error: "Failed to delete task" });
+    }
+  });
+
+  // Массовое обновление себестоимости работ
+  app.patch("/api/hierarchy/bulk-update", async (req, res) => {
+    try {
+      const { coefficient } = req.body;
+      
+      if (!coefficient || typeof coefficient !== 'number' || coefficient <= 0) {
+        return res.status(400).json({ error: "Coefficient must be a positive number" });
+      }
+
+      // Получаем все работы с себестоимостью
+      const allTasks = await db.select().from(tasks).where(isNotNull(tasks.costPrice));
+      
+      let updated = 0;
+      
+      // Обновляем каждую работу
+      for (const task of allTasks) {
+        if (task.costPrice) {
+          const currentPrice = parseFloat(task.costPrice);
+          if (!isNaN(currentPrice)) {
+            const newPrice = (currentPrice * coefficient / 100).toFixed(2);
+            
+            await db
+              .update(tasks)
+              .set({ costPrice: newPrice })
+              .where(eq(tasks.id, task.id));
+            
+            updated++;
+          }
+        }
+      }
+
+      console.log(`Bulk update completed: ${updated} tasks updated with coefficient ${coefficient}%`);
+      
+      res.json({ 
+        message: "Bulk update completed successfully",
+        updated,
+        coefficient 
+      });
+    } catch (error) {
+      console.error("Error in bulk update:", error);
+      res.status(500).json({ error: "Failed to perform bulk update" });
     }
   });
 
