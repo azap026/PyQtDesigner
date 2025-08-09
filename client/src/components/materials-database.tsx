@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Edit, Trash2, Package, Search, Database } from "lucide-react";
+import { Plus, Edit, Trash2, Package, Search, Database, AlertTriangle } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -48,7 +48,7 @@ export function MaterialsDatabase() {
     mutationFn: async () => {
       return apiRequest("POST", "/api/materials/import-base");
     },
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ["/api/materials"] });
       toast({
         title: "Успех",
@@ -59,6 +59,26 @@ export function MaterialsDatabase() {
       toast({
         title: "Ошибка импорта",
         description: "Не удалось импортировать базу материалов",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const clearMaterialsMutation = useMutation({
+    mutationFn: async () => {
+      return apiRequest("DELETE", "/api/materials/clear");
+    },
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/materials"] });
+      toast({
+        title: "База очищена",
+        description: `Удалено ${data.deleted} материалов`,
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Ошибка",
+        description: "Не удалось очистить базу материалов",
         variant: "destructive",
       });
     },
@@ -103,6 +123,19 @@ export function MaterialsDatabase() {
             <span>База данных материалов</span>
           </CardTitle>
           <div className="flex space-x-2">
+            <Button
+              onClick={() => {
+                if (window.confirm("Вы уверены, что хотите очистить всю базу материалов? Это действие нельзя отменить.")) {
+                  clearMaterialsMutation.mutate();
+                }
+              }}
+              variant="outline"
+              className="text-red-600 border-red-600 hover:bg-red-600 hover:text-white"
+              disabled={clearMaterialsMutation.isPending}
+            >
+              <AlertTriangle className="h-4 w-4 mr-2" />
+              {clearMaterialsMutation.isPending ? "Очистка..." : "Очистить базу"}
+            </Button>
             <Button
               onClick={() => importBaseMaterialsMutation.mutate()}
               variant="outline"

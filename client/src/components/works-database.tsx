@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Edit, Trash2, Hammer, Search, Upload } from "lucide-react";
+import { Plus, Edit, Trash2, Hammer, Search, Upload, AlertTriangle } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -69,6 +69,27 @@ export function WorksDatabase() {
     },
   });
 
+  const clearWorksMutation = useMutation({
+    mutationFn: async () => {
+      return apiRequest("DELETE", "/api/work-items/clear");
+    },
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/work-items", "all"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
+      toast({
+        title: "База очищена",
+        description: `Удалено ${data.deleted} работ`,
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Ошибка",
+        description: "Не удалось очистить базу работ",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleAddWork = () => {
     setEditingWork(null);
     setIsModalOpen(true);
@@ -109,6 +130,19 @@ export function WorksDatabase() {
             <span>База данных работ</span>
           </CardTitle>
           <div className="flex space-x-2">
+            <Button
+              onClick={() => {
+                if (window.confirm("Вы уверены, что хотите очистить всю базу работ? Это действие нельзя отменить.")) {
+                  clearWorksMutation.mutate();
+                }
+              }}
+              variant="outline"
+              className="text-red-600 border-red-600 hover:bg-red-600 hover:text-white"
+              disabled={clearWorksMutation.isPending}
+            >
+              <AlertTriangle className="h-4 w-4 mr-2" />
+              {clearWorksMutation.isPending ? "Очистка..." : "Очистить базу"}
+            </Button>
             <Button
               onClick={() => setIsImportModalOpen(true)}
               variant="outline"
