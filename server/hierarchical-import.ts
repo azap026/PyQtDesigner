@@ -81,8 +81,17 @@ export function parseHierarchicalExcel(buffer: Buffer): ParsedRecord[] {
   console.log('=== НАЧАЛО ПАРСИНГА ===');
   
   // Проверяем по заголовку файла - Excel файлы начинаются с PK (ZIP-архив)
-  const isExcel = buffer.length > 4 && 
-    buffer[0] === 0x50 && buffer[1] === 0x4B; // PK магический номер
+  // Также проверяем наличие подписи Excel в начале файла
+  const hasZipSignature = buffer.length > 4 && 
+    buffer[0] === 0x50 && buffer[1] === 0x4B && // PK магический номер
+    (buffer[2] === 0x03 || buffer[2] === 0x05 || buffer[2] === 0x07); // Дополнительная проверка ZIP
+  
+  // Дополнительная проверка: ищем подпись Excel файлов
+  const bufferStr = buffer.toString('binary', 0, Math.min(buffer.length, 1000));
+  const hasExcelSignature = bufferStr.includes('xl/') || bufferStr.includes('docProps/') || 
+                           bufferStr.includes('[Content_Types].xml');
+  
+  const isExcel = hasZipSignature || hasExcelSignature;
   
   console.log('Тип файла:', isExcel ? 'Excel' : 'CSV');
   
@@ -90,8 +99,9 @@ export function parseHierarchicalExcel(buffer: Buffer): ParsedRecord[] {
   
   if (!isExcel) {
     // Для CSV файлов - парсим как текст с правильной кодировкой
-    const fileStr = buffer.toString('utf8');
-    const lines = fileStr.split('\n').filter(line => line.trim().length > 0);
+    try {
+      const fileStr = buffer.toString('utf8');
+      const lines = fileStr.split('\n').filter(line => line.trim().length > 0);
     
     // Автоопределение разделителя: проверяем первую строку
     const firstLine = lines[0] || '';
@@ -121,6 +131,21 @@ export function parseHierarchicalExcel(buffer: Buffer): ParsedRecord[] {
       result.push(current.trim());
       return result;
     });
+    } catch (error) {
+      console.log('Ошибка при чтении как CSV, пробуем как Excel файл...');
+      // Если не удалось прочитать как CSV, пробуем как Excel
+      const workbook = XLSX.read(buffer, { 
+        type: "buffer",
+        codepage: 65001 // UTF-8 кодировка
+      });
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      
+      jsonData = XLSX.utils.sheet_to_json(worksheet, { 
+        header: 1,
+        defval: null 
+      });
+    }
   } else {
     // Для Excel файлов
     const workbook = XLSX.read(buffer, { 
@@ -237,7 +262,7 @@ export async function importHierarchicalStructure(buffer: Buffer): Promise<Impor
         orderNum: record.orderNum
       };
       
-      const createdSection = await storage.createSection(sectionData);
+      const createdSection = await storage.createSection(sectionData as InsertSection);
       sectionMap.set(cleanIndex, createdSection.id);
       sectionsCreated++;
       
@@ -286,7 +311,7 @@ export async function importHierarchicalStructure(buffer: Buffer): Promise<Impor
           orderNum: record.orderNum
         };
         
-        await storage.createTask(taskData);
+        await storage.createTask(taskData as InsertTask);
         tasksCreated++;
         
       } catch (error) {
