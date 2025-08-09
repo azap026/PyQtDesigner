@@ -489,15 +489,17 @@ export function WorksEstimate({ projectId }: WorksEstimateProps) {
                                           autoFocus
                                         />
                                         {searchResults.length > 0 && (
-                                          <div className="absolute top-full left-0 right-0 z-50 bg-white dark:bg-gray-800 border rounded-md shadow-lg max-h-60 overflow-y-auto">
+                                          <div className="absolute top-full left-0 z-50 bg-white dark:bg-gray-800 border rounded-md shadow-lg max-h-60 overflow-y-auto min-w-[400px] w-max">
                                             {searchResults.map((result: any) => (
                                               <div
                                                 key={result.id}
-                                                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer border-b last:border-b-0"
+                                                className="p-3 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer border-b last:border-b-0"
                                                 onClick={() => handleSelectMaterial(result)}
                                               >
-                                                <div className="font-medium text-sm">{result.name}</div>
-                                                <div className="text-xs text-gray-500">
+                                                <div className="font-medium text-sm whitespace-nowrap overflow-hidden text-ellipsis max-w-[380px]" title={result.name}>
+                                                  {result.name}
+                                                </div>
+                                                <div className="text-xs text-gray-500 mt-1">
                                                   {result.unit} • ₽{parseFloat(result.pricePerUnit).toFixed(2)}
                                                 </div>
                                               </div>
