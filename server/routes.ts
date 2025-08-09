@@ -856,19 +856,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ]
       ];
 
-      // Создаём CSV для более надёжной работы с кодировкой
-      // Используем точку с запятой как разделитель (стандарт для русской локализации)
-      const csvContent = templateData.map(row => row.map(cell => {
-        // Экранируем ячейки с точками с запятой или кавычками
-        if (cell.includes(';') || cell.includes('"') || cell.includes('\n')) {
-          return '"' + cell.replace(/"/g, '""') + '"';
-        }
-        return cell;
-      }).join(';')).join('\n');
+      // Создаём шаблон в том же формате, что и пользовательские данные
+      // Поддерживаем и Excel и CSV форматы
+      const format = req.query.format as string || 'csv';
+      
+      if (format === 'excel') {
+        // Excel формат
+        const workbook = XLSX.utils.book_new();
+        const worksheet = XLSX.utils.aoa_to_sheet(templateData);
+        
+        // Set column widths
+        worksheet['!cols'] = [
+          { width: 8 },  // №
+          { width: 12 }, // Шифр
+          { width: 50 }, // Наименование
+          { width: 15 }, // Ед. изм.
+          { width: 15 }, // Себестоимость
+        ];
 
-      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-      res.setHeader('Content-Disposition', 'attachment; filename=template_hierarchy.csv');
-      res.send('\uFEFF' + csvContent); // Добавляем BOM для правильной кодировки UTF-8
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Иерархическая структура");
+        
+        const buffer = XLSX.write(workbook, { 
+          type: "buffer", 
+          bookType: "xlsx" 
+        });
+
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', 'attachment; filename=template_hierarchy.xlsx');
+        res.send(buffer);
+      } else {
+        // CSV формат с точкой с запятой (стандарт для русской локализации)
+        const csvContent = templateData.map(row => row.map(cell => {
+          // Экранируем ячейки с точками с запятой или кавычками
+          if (cell.includes(';') || cell.includes('"') || cell.includes('\n')) {
+            return '"' + cell.replace(/"/g, '""') + '"';
+          }
+          return cell;
+        }).join(';')).join('\n');
+
+        res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+        res.setHeader('Content-Disposition', 'attachment; filename=template_hierarchy.csv');
+        res.send('\uFEFF' + csvContent); // Добавляем BOM для правильной кодировки UTF-8
+      }
     } catch (error) {
       console.error("Error creating hierarchy template:", error);
       res.status(500).json({ error: "Failed to create hierarchy template" });
