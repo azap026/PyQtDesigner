@@ -747,106 +747,127 @@ export async function registerRoutes(app: Express): Promise<Server> {
           "Шифр", 
           "Наименование работ и затрат", 
           "Ед. изм.", 
-          "Себестоимость", 
-          "Цена"
+          "Себестоимость"
         ],
         [
           "1", 
-          "6-", 
-          "ЗЕМЛЯНЫЕ РАБОТЫ", 
-          "", 
+          "1-", 
+          "Земляные работы", 
           "", 
           ""
         ],
         [
           "2", 
-          "6.1-", 
-          "Разработка грунта", 
-          "", 
-          "", 
-          ""
+          "1.1", 
+          "Разработка грунта вручную", 
+          "м³", 
+          "145.50"
         ],
         [
           "3", 
-          "6.1.1", 
-          "Разработка грунта экскаватором в отвал", 
-          "м³", 
-          "120.50", 
-          "180.75"
+          "1.2", 
+          "Планировка площадей", 
+          "м²", 
+          "12.30"
         ],
         [
           "4", 
-          "6.1.2", 
-          "Разработка грунта вручную", 
+          "1.3", 
+          "Засыпка траншей", 
           "м³", 
-          "450.00", 
-          "675.00"
+          "89.75"
         ],
         [
           "5", 
-          "6.2-", 
-          "Засыпка и уплотнение", 
-          "", 
+          "2-", 
+          "Фундаменты", 
           "", 
           ""
         ],
         [
           "6", 
-          "6.2.1", 
-          "Засыпка траншей и котлованов грунтом", 
+          "2.1", 
+          "Устройство бетонной подготовки", 
           "м³", 
-          "85.30", 
-          "128.95"
+          "1245.60"
         ],
         [
           "7", 
-          "7-", 
-          "БЕТОННЫЕ И ЖЕЛЕЗОБЕТОННЫЕ РАБОТЫ", 
-          "", 
-          "", 
-          ""
+          "2.2", 
+          "Устройство ленточных фундаментов", 
+          "м³", 
+          "2145.80"
         ],
         [
           "8", 
-          "7.1-", 
-          "Устройство фундаментов", 
-          "", 
+          "2.3", 
+          "Гидроизоляция фундаментов", 
+          "м²", 
+          "125.40"
+        ],
+        [
+          "9", 
+          "3-", 
+          "Стены", 
           "", 
           ""
         ],
         [
-          "9", 
-          "7.1.1", 
-          "Устройство бетонной подготовки", 
+          "10", 
+          "3.1-", 
+          "Кирпичная кладка", 
+          "", 
+          ""
+        ],
+        [
+          "11", 
+          "3.1.1", 
+          "Кладка стен из кирпича", 
           "м³", 
-          "2800.00", 
-          "4200.00"
+          "3250.00"
+        ],
+        [
+          "12", 
+          "3.1.2", 
+          "Расшивка швов", 
+          "м²", 
+          "45.80"
+        ],
+        [
+          "13", 
+          "3.2-", 
+          "Монолитные работы", 
+          "", 
+          ""
+        ],
+        [
+          "14", 
+          "3.2.1", 
+          "Устройство монолитных стен", 
+          "м³", 
+          "2890.50"
+        ],
+        [
+          "15", 
+          "3.2.2", 
+          "Установка арматуры", 
+          "т", 
+          "12500.00"
         ]
       ];
 
-      const workbook = XLSX.utils.book_new();
-      const worksheet = XLSX.utils.aoa_to_sheet(templateData);
-      
-      // Set column widths
-      worksheet['!cols'] = [
-        { width: 8 },  // №
-        { width: 12 }, // Шифр
-        { width: 50 }, // Наименование
-        { width: 15 }, // Ед. изм.
-        { width: 15 }, // Себестоимость
-        { width: 15 }, // Цена
-      ];
+      // Создаём CSV для более надёжной работы с кодировкой
+      const csvContent = templateData.map(row => row.map(cell => {
+        // Экранируем ячейки с запятыми или кавычками
+        if (cell.includes(',') || cell.includes('"') || cell.includes('\n')) {
+          return '"' + cell.replace(/"/g, '""') + '"';
+        }
+        return cell;
+      }).join(',')).join('\n');
 
-      XLSX.utils.book_append_sheet(workbook, worksheet, "Иерархическая структура");
-      
-      const buffer = XLSX.write(workbook, { 
-        type: "buffer", 
-        bookType: "xlsx" 
-      });
-
-      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-      res.setHeader('Content-Disposition', 'attachment; filename=template_hierarchy.xlsx');
-      res.send(buffer);
+      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+      res.setHeader('Content-Disposition', 'attachment; filename=template_hierarchy.csv');
+      res.send('\uFEFF' + csvContent); // Добавляем BOM для правильной кодировки UTF-8
     } catch (error) {
       console.error("Error creating hierarchy template:", error);
       res.status(500).json({ error: "Failed to create hierarchy template" });

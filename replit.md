@@ -105,8 +105,12 @@ User prefers Russian language for all interface and communication.
 - Implemented hierarchical work structure system (разделы → подразделы → работы)
 - Added PostgreSQL tables: sections, tasks with proper relationships
 - Created automatic hierarchy detection logic based on index patterns
-- Developed Excel import functionality with validation and parent-child relationship checking
+- Developed Excel/CSV import functionality with UTF-8 encoding support
 - Added API endpoints for hierarchical structure management (/api/hierarchy/*)
 - Created comprehensive UI for managing hierarchical work structure
 - Fixed database relation conflicts with proper relationName specification
 - Integrated hierarchical structure tab into main Settings menu
+- Resolved UTF-8 encoding issues for proper Russian text display
+- Added inline editing functionality for costPrice (себестоимость) values
+- Fixed data duplication problems and implemented proper database clearing
+- Created working CSV template download with correct UTF-8 encoding

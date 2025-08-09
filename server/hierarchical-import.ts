@@ -78,14 +78,19 @@ export function findParentIndex(index: string): string | null {
  * Парсит Excel файл и определяет структуру
  */
 export function parseHierarchicalExcel(buffer: Buffer): ParsedRecord[] {
-  // Проверяем, является ли файл CSV или Excel
-  const fileStr = buffer.toString('utf8');
-  const isCSV = fileStr.includes(',') || fileStr.includes(';');
+  console.log('=== НАЧАЛО ПАРСИНГА ===');
+  
+  // Проверяем по заголовку файла - Excel файлы начинаются с PK (ZIP-архив)
+  const isExcel = buffer.length > 4 && 
+    buffer[0] === 0x50 && buffer[1] === 0x4B; // PK магический номер
+  
+  console.log('Тип файла:', isExcel ? 'Excel' : 'CSV');
   
   let jsonData: any[][];
   
-  if (isCSV) {
+  if (!isExcel) {
     // Для CSV файлов - парсим как текст с правильной кодировкой
+    const fileStr = buffer.toString('utf8');
     const lines = fileStr.split('\n').filter(line => line.trim().length > 0);
     jsonData = lines.map(line => {
       // Разделяем по запятым, учитывая кавычки
@@ -125,6 +130,9 @@ export function parseHierarchicalExcel(buffer: Buffer): ParsedRecord[] {
   const records: ParsedRecord[] = [];
   let orderNum = 0;
 
+  console.log('Всего строк для обработки:', jsonData.length);
+  console.log('Первые строки:', jsonData.slice(0, 3));
+
   // Пропускаем заголовок (первую строку)
   for (let i = 1; i < jsonData.length; i++) {
     const row = jsonData[i] as any[];
@@ -154,9 +162,13 @@ export function parseHierarchicalExcel(buffer: Buffer): ParsedRecord[] {
     if (index === '37294') index = '14-';
     if (index === '37325') index = '15-';
     
-    if (!index || !title) continue;
+    if (!index || !title) {
+      console.log(`Пропускаем строку ${orderNum + 2}: шифр="${index}", название="${title}"`);
+      continue;
+    }
     
     const type = determineRecordType(index);
+    console.log(`Строка ${orderNum + 2}: шифр="${index}", тип="${type}"`);
     if (type === 'ignore') continue;
     
     records.push({
@@ -168,6 +180,9 @@ export function parseHierarchicalExcel(buffer: Buffer): ParsedRecord[] {
       orderNum: orderNum++
     });
   }
+  
+  console.log('Всего записей создано:', records.length);
+  console.log('Записи:', records.map(r => ({ index: r.index, title: r.title, type: r.type })));
   
   return records;
 }
