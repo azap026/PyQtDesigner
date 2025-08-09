@@ -12,6 +12,7 @@ import { MaterialPrices } from "@/components/material-prices";
 import { HierarchyDatabase } from "@/components/hierarchy-database";
 import { DetailedEstimate } from "@/components/detailed-estimate";
 import { WorksEstimate } from "@/components/works-estimate";
+import { RoomParametersTable } from "@/components/room-parameters-table";
 import { useToast } from "@/hooks/use-toast";
 import type { ProjectWithWorkItems, WorkItem, Project } from "@shared/schema";
 
@@ -242,71 +243,7 @@ export default function Dashboard() {
                   </div>
 
                   {/* Таблица габаритов помещений */}
-                  <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-                    <h3 className="text-lg font-semibold mb-4">Габариты помещений</h3>
-                    <div className="overflow-x-auto">
-                      <table className="w-full border-collapse border border-gray-300 dark:border-gray-600 text-sm">
-                        <thead>
-                          <tr className="bg-gray-100 dark:bg-gray-700">
-                            <th className="border border-gray-300 dark:border-gray-600 px-2 py-1 text-left font-medium">Габариты</th>
-                            <th className="border border-gray-300 dark:border-gray-600 px-2 py-1 text-center font-medium">Помещение 1</th>
-                            <th className="border border-gray-300 dark:border-gray-600 px-2 py-1 text-center font-medium">Помещение 2</th>
-                            <th className="border border-gray-300 dark:border-gray-600 px-2 py-1 text-center font-medium">Помещение 3</th>
-                            <th className="border border-gray-300 dark:border-gray-600 px-2 py-1 text-center font-medium">Помещение 4</th>
-                            <th className="border border-gray-300 dark:border-gray-600 px-2 py-1 text-center font-medium">Помещение 5</th>
-                            <th className="border border-gray-300 dark:border-gray-600 px-2 py-1 text-center font-medium">Помещение 6</th>
-                            <th className="border border-gray-300 dark:border-gray-600 px-2 py-1 text-center font-medium">Помещение 7</th>
-                            <th className="border border-gray-300 dark:border-gray-600 px-2 py-1 text-center font-medium">Помещение 8</th>
-                            <th className="border border-gray-300 dark:border-gray-600 px-2 py-1 text-center font-medium">Помещение 9</th>
-                            <th className="border border-gray-300 dark:border-gray-600 px-2 py-1 text-center font-medium">санузел1</th>
-                            <th className="border border-gray-300 dark:border-gray-600 px-2 py-1 text-center font-medium">санузел2</th>
-                            <th className="border border-gray-300 dark:border-gray-600 px-2 py-1 text-center font-medium">санузел3</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {[
-                            { label: "Длина", bg: "bg-yellow-50 dark:bg-yellow-900/20" },
-                            { label: "Ширина вдоль окна", bg: "bg-yellow-50 dark:bg-yellow-900/20" },
-                            { label: "Площадь стен", bg: "bg-yellow-50 dark:bg-yellow-900/20" },
-                            { label: "Площадь пола", bg: "bg-yellow-50 dark:bg-yellow-900/20" },
-                            { label: "Проемы", bg: "bg-white dark:bg-gray-800" },
-                            { label: "Периметр", bg: "bg-white dark:bg-gray-800" },
-                            { label: "Высота", bg: "bg-yellow-50 dark:bg-yellow-900/20" },
-                            { label: "Оконные откосы", bg: "bg-white dark:bg-gray-800" },
-                            { label: "Двери (кол-во) (шт)", bg: "bg-white dark:bg-gray-800" },
-                            { label: "Окно 1: Длина/Высота, (м)", bg: "bg-purple-50 dark:bg-purple-900/20" },
-                            { label: "", bg: "bg-purple-50 dark:bg-purple-900/20", secondary: "А" },
-                            { label: "", bg: "bg-purple-50 dark:bg-purple-900/20", secondary: "В" },
-                            { label: "Окно 2: Длина/Высота, (м)", bg: "bg-purple-50 dark:bg-purple-900/20" },
-                            { label: "", bg: "bg-purple-50 dark:bg-purple-900/20", secondary: "А" },
-                            { label: "", bg: "bg-purple-50 dark:bg-purple-900/20", secondary: "В" },
-                            { label: "Окно 3: Длина/Высота, (м)", bg: "bg-purple-50 dark:bg-purple-900/20" },
-                            { label: "", bg: "bg-purple-50 dark:bg-purple-900/20", secondary: "А" },
-                            { label: "", bg: "bg-purple-50 dark:bg-purple-900/20", secondary: "В" },
-                            { label: "Портал: Длина/Высота, (м)", bg: "bg-purple-50 dark:bg-purple-900/20" },
-                            { label: "", bg: "bg-purple-50 dark:bg-purple-900/20", secondary: "А" },
-                            { label: "", bg: "bg-purple-50 dark:bg-purple-900/20", secondary: "В" },
-                          ].map((row, rowIndex) => (
-                            <tr key={rowIndex}>
-                              <td className={`border border-gray-300 dark:border-gray-600 px-2 py-1 ${row.bg} font-medium text-right`}>
-                                {row.label}
-                                {row.secondary && <div className="text-center">{row.secondary}</div>}
-                              </td>
-                              {Array.from({ length: 12 }, (_, colIndex) => (
-                                <td key={colIndex} className="border border-gray-300 dark:border-gray-600 p-0">
-                                  <input
-                                    type="text"
-                                    className={`w-full h-8 px-2 border-0 bg-transparent text-center text-sm focus:bg-blue-50 dark:focus:bg-blue-900/20 focus:outline-none focus:ring-1 focus:ring-blue-500 ${row.bg}`}
-                                    placeholder=""
-                                  />
-                                </td>
-                              ))}
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
+                  <RoomParametersTable />
                 </div>
               )}
 
