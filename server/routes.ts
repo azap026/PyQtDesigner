@@ -292,22 +292,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (!row || row.length === 0 || !row[0]) continue;
 
         try {
+          // Функция для очистки и конвертации русского формата чисел
+          const cleanPrice = (value: any): string => {
+            if (!value) return "0";
+            let priceStr = value.toString().trim();
+            // Удаляем пробелы из чисел (русский формат тысяч)
+            priceStr = priceStr.replace(/\s+/g, '');
+            // Заменяем запятую на точку (русский десятичный разделитель)
+            priceStr = priceStr.replace(',', '.');
+            return priceStr;
+          };
+
+          // Обновленная структура согласно файлу "Цены парсер"
           const materialData = {
-            name: row[0]?.toString() || "",
-            unit: row[1]?.toString() || "",
-            pricePerUnit: row[2]?.toString() || "0",
-            imageUrl: row[3]?.toString() || null,
-            productUrl: row[4]?.toString() || null,
-            consumptionRate: row[5]?.toString() || null,
-            consumptionUnit: row[6]?.toString() || null,
-            weightPerUnit: row[7]?.toString() || null,
-            weightUnit: row[8]?.toString() || null,
-            supplier: row[9]?.toString() || null,
-            notes: row[10]?.toString() || null,
+            name: row[1]?.toString() || "", // Наименование (колонка B)
+            price: parseFloat(cleanPrice(row[2])) || 0, // Цена (колонка C)
+            imageUrl: row[3]?.toString() || null, // Ссылка на картинку (колонка D)
+            productUrl: row[4]?.toString() || null, // Ссылка на товар (колонка E)
+            unit: row[5]?.toString() || "шт", // Единица измерения (колонка F)
+            consumption: parseFloat(cleanPrice(row[6])) || null, // Норма расхода (колонка G)
+            weight: parseFloat(cleanPrice(row[7])) || null, // Вес на единицу (колонка H)
           };
 
           // Validate required fields
-          if (!materialData.name || !materialData.unit || !materialData.pricePerUnit) {
+          if (!materialData.name || !materialData.unit || !materialData.price) {
             errors.push(`Строка ${i + 2}: отсутствуют обязательные поля (название, единица измерения, цена)`);
             continue;
           }
@@ -339,62 +347,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const templateData = [
         [
-          "Наименование*", 
-          "Единица измерения*", 
-          "Цена за единицу*", 
+          "№", 
+          "Наименование", 
+          "Цена", 
           "Ссылка на картинку", 
           "Ссылка на товар", 
-          "Расход на ед. изм.", 
-          "Единица расхода", 
-          "Вес за единицу", 
-          "Единица веса", 
-          "Поставщик", 
-          "Примечания"
+          "ЕД.ИЗМ", 
+          "Норма расхода на 1кв.м.", 
+          "Вес на единицу"
         ],
         [
-          "Кирпич керамический", 
+          "1", 
+          "*1150101001 КЕНДИ КАШТАН 340ML", 
+          "7153.50", 
+          "https://lk.teremopt.ru/upload/resize_cache/iblock/", 
+          "https://lk.teremopt.ru/catalogue/detail.php?ID=12202", 
           "шт", 
-          "12.50", 
-          "https://example.com/brick.jpg", 
-          "https://shop.com/brick", 
-          "510", 
-          "шт/м³", 
-          "2.5", 
-          "кг/шт", 
-          "ООО Стройматериалы", 
-          "Красный лицевой кирпич"
+          "1.2", 
+          "0.5"
         ],
         [
-          "Цемент М400", 
-          "кг", 
-          "8.50", 
-          "", 
-          "", 
-          "350", 
-          "кг/м³", 
-          "", 
-          "", 
-          "Завод ЖБИ-1", 
-          "Портландцемент"
+          "2", 
+          "*1160033100 КЕНДИ МОРКОВЬ Мусс", 
+          "1189.40", 
+          "https://lk.teremopt.ru/upload/resize_cache/iblock/", 
+          "https://lk.teremopt.ru/catalogue/detail.php?ID=12243", 
+          "шт", 
+          "0.8", 
+          "0.3"
         ]
       ];
 
       const workbook = XLSX.utils.book_new();
       const worksheet = XLSX.utils.aoa_to_sheet(templateData);
       
-      // Set column widths
+      // Set column widths  
       worksheet['!cols'] = [
-        { width: 25 }, // Наименование
-        { width: 15 }, // Единица измерения
+        { width: 5 },  // №
+        { width: 40 }, // Наименование
         { width: 15 }, // Цена
-        { width: 30 }, // Ссылка на картинку
-        { width: 30 }, // Ссылка на товар
-        { width: 15 }, // Расход
-        { width: 15 }, // Единица расхода
-        { width: 15 }, // Вес
-        { width: 15 }, // Единица веса
-        { width: 20 }, // Поставщик
-        { width: 30 }, // Примечания
+        { width: 35 }, // Ссылка на картинку
+        { width: 35 }, // Ссылка на товар
+        { width: 12 }, // ЕД.ИЗМ
+        { width: 20 }, // Норма расхода
+        { width: 15 }, // Вес на единицу
       ];
 
       XLSX.utils.book_append_sheet(workbook, worksheet, "Материалы");
@@ -405,7 +401,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-      res.setHeader('Content-Disposition', 'attachment; filename=template_materials.xlsx');
+      res.setHeader('Content-Disposition', 'attachment; filename=template_material_prices.xlsx');
       res.send(buffer);
     } catch (error) {
       console.error("Error creating template:", error);

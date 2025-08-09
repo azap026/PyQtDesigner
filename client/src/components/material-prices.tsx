@@ -221,6 +221,15 @@ export function MaterialPrices() {
             </Button>
             
             <Button 
+              onClick={() => window.open('/api/materials/template', '_blank')}
+              variant="outline"
+              className="flex items-center space-x-2"
+            >
+              <Download className="h-4 w-4" />
+              <span>Скачать шаблон</span>
+            </Button>
+            
+            <Button 
               variant="destructive" 
               onClick={handleClearDatabase}
               disabled={clearMutation.isPending}
