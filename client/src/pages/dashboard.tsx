@@ -13,8 +13,24 @@ import { HierarchyDatabase } from "@/components/hierarchy-database";
 import { DetailedEstimate } from "@/components/detailed-estimate";
 import { WorksEstimate } from "@/components/works-estimate";
 import { RoomParametersTable } from "@/components/room-parameters-table";
+import { SummaryTable } from "@/components/summary-table";
 import { useToast } from "@/hooks/use-toast";
 import type { ProjectWithWorkItems, WorkItem, Project } from "@shared/schema";
+
+interface RoomData {
+  length: number;
+  height: number;
+  floorArea: number;
+  window1_a: number;
+  window1_b: number;
+  window2_a: number;
+  window2_b: number;
+  window3_a: number;
+  window3_b: number;
+  portal_a: number;
+  portal_b: number;
+  doors: number;
+}
 
 export default function Dashboard() {
   const [currentProjectId, setCurrentProjectId] = useState<string>("");
@@ -23,6 +39,20 @@ export default function Dashboard() {
   const [isWorkModalOpen, setIsWorkModalOpen] = useState(false);
   const [isMaterialModalOpen, setIsMaterialModalOpen] = useState(false);
   const [editingWork, setEditingWork] = useState<WorkItem | null>(null);
+  const [roomsData, setRoomsData] = useState<RoomData[]>(Array.from({ length: 12 }, () => ({
+    length: 0,
+    height: 0,
+    floorArea: 0,
+    window1_a: 0,
+    window1_b: 0,
+    window2_a: 0,
+    window2_b: 0,
+    window3_a: 0,
+    window3_b: 0,
+    portal_a: 0,
+    portal_b: 0,
+    doors: 0,
+  })));
   
   const { toast } = useToast();
 
@@ -121,6 +151,12 @@ export default function Dashboard() {
       title: "Проект сохранён",
       description: "Все изменения автоматически сохраняются",
     });
+  };
+
+  const handleRoomDataChange = (roomIndex: number, newData: RoomData) => {
+    const newRoomsData = [...roomsData];
+    newRoomsData[roomIndex] = newData;
+    setRoomsData(newRoomsData);
   };
 
   const selectedWork = currentProject?.workItems.find(w => w.id === selectedWorkId) || null;
@@ -243,7 +279,10 @@ export default function Dashboard() {
                   </div>
 
                   {/* Таблица габаритов помещений */}
-                  <RoomParametersTable />
+                  <RoomParametersTable onDataChange={handleRoomDataChange} />
+                  
+                  {/* Сводная таблица габаритов */}
+                  <SummaryTable roomsData={roomsData} />
                 </div>
               )}
 
