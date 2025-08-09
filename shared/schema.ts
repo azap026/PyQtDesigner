@@ -149,8 +149,7 @@ export const tasks = pgTable("tasks", {
   displayIndex: text("display_index").notNull(), // например: "6.1.1"
   title: text("title").notNull(),
   unit: text("unit").notNull(), // единица измерения (м², м.п., шт и т.п.)
-  costPrice: decimal("cost_price", { precision: 10, scale: 2 }), // себестоимость за единицу
-  price: decimal("price", { precision: 10, scale: 2 }).notNull(), // цена за единицу
+  costPrice: decimal("cost_price", { precision: 10, scale: 2 }).notNull(), // себестоимость за единицу (основное поле)
   parentSectionId: varchar("parent_section_id").notNull().references(() => sections.id, { onDelete: "cascade" }),
   orderNum: integer("order_num").notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),

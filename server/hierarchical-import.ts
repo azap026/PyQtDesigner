@@ -7,7 +7,6 @@ interface ParsedRecord {
   title: string;
   unit?: string;
   costPrice?: string;
-  price?: string;
   type: 'section' | 'subsection' | 'task' | 'ignore';
   orderNum: number;
 }
@@ -101,7 +100,6 @@ export function parseHierarchicalExcel(buffer: Buffer): ParsedRecord[] {
     const title = row[2]?.toString()?.trim();  // Столбец C (наименование)  
     const unit = row[3]?.toString()?.trim() || '';   // Столбец D (единица измерения)
     const costPrice = row[4]?.toString()?.trim() || ''; // Столбец E (себестоимость)
-    const price = row[5]?.toString()?.trim() || row[4]?.toString()?.trim() || '';     // Столбец F (цена), используем себестоимость если цена не указана
     
     if (!index || !title) continue;
     
@@ -113,7 +111,6 @@ export function parseHierarchicalExcel(buffer: Buffer): ParsedRecord[] {
       title,
       unit,
       costPrice,
-      price,
       type,
       orderNum: orderNum++
     });
@@ -190,22 +187,16 @@ export async function importHierarchicalStructure(buffer: Buffer): Promise<Impor
           continue;
         }
         
-        // Для работ обязательны единица измерения и хотя бы одна цена
+        // Для работ обязательны единица измерения и себестоимость
         if (!record.unit || record.unit === "") {
           errors.push(`Строка ${record.orderNum + 2}: отсутствует единица измерения для работы "${record.index}"`);
           continue;
         }
         
-        // Проверяем наличие хотя бы одной цены
-        if ((!record.costPrice || record.costPrice === "") && (!record.price || record.price === "")) {
-          errors.push(`Строка ${record.orderNum + 2}: отсутствует цена для работы "${record.index}"`);
+        // Проверяем наличие себестоимости
+        if (!record.costPrice || record.costPrice === "") {
+          errors.push(`Строка ${record.orderNum + 2}: отсутствует себестоимость для работы "${record.index}"`);
           continue;
-        }
-        
-        // Если нет цены продажи, используем себестоимость
-        let finalPrice = record.price;
-        if (!finalPrice || finalPrice === "") {
-          finalPrice = record.costPrice;
         }
         
         const taskData: InsertTask = {
@@ -213,8 +204,7 @@ export async function importHierarchicalStructure(buffer: Buffer): Promise<Impor
           displayIndex: record.index,
           title: record.title,
           unit: record.unit,
-          costPrice: record.costPrice && record.costPrice !== "" ? record.costPrice : null,
-          price: finalPrice,
+          costPrice: record.costPrice,
           parentSectionId,
           orderNum: record.orderNum
         };

@@ -143,10 +143,9 @@ export function HierarchyDatabase() {
             <span className="text-sm flex-1">{task.title}</span>
             <div className="flex items-center space-x-2 text-xs text-gray-500">
               <Badge variant="outline">{task.unit}</Badge>
-              {task.costPrice && (
-                <span>Себест.: {task.costPrice} ₽</span>
-              )}
-              <span className="font-medium">Цена: {task.price} ₽</span>
+              <span className="font-medium">
+                {task.costPrice ? `${task.costPrice} ₽` : "Не указана"}
+              </span>
             </div>
           </div>
         ))}
