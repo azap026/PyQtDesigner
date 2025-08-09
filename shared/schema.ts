@@ -132,7 +132,7 @@ export type WorkItemWithMaterials = WorkItem & {
 };
 
 // Hierarchical work structure tables
-export const sections = pgTable("sections", {
+export const sections: any = pgTable("sections", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   index: text("index").notNull(), // хранится без минуса (например: "6", "6.1")
   displayIndex: text("display_index").notNull(), // для отображения (например: "6-", "6.1-")
@@ -158,12 +158,15 @@ export const tasks = pgTable("tasks", {
 });
 
 // Relations for hierarchical structure
-export const sectionsRelations = relations(sections, ({ one, many }) => ({
+export const sectionsRelations = relations(sections, ({ one, many }): any => ({
   parent: one(sections, {
     fields: [sections.parentId],
     references: [sections.id],
+    relationName: "children",
   }),
-  children: many(sections),
+  children: many(sections, {
+    relationName: "children",
+  }),
   tasks: many(tasks),
 }));
 

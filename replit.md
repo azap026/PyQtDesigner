@@ -100,3 +100,13 @@ User prefers Russian language for all interface and communication.
 - Fixed data type issues with decimal fields in API
 - Russian localization for all interface elements
 - Enhanced sidebar navigation with Settings section
+
+### January 2025 (Latest)
+- Implemented hierarchical work structure system (разделы → подразделы → работы)
+- Added PostgreSQL tables: sections, tasks with proper relationships
+- Created automatic hierarchy detection logic based on index patterns
+- Developed Excel import functionality with validation and parent-child relationship checking
+- Added API endpoints for hierarchical structure management (/api/hierarchy/*)
+- Created comprehensive UI for managing hierarchical work structure
+- Fixed database relation conflicts with proper relationName specification
+- Integrated hierarchical structure tab into main Settings menu

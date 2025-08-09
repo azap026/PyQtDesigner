@@ -28,23 +28,23 @@ export function determineRecordType(index: string): 'section' | 'subsection' | '
   
   const trimmed = index.trim();
   
-  // Игнорируем строки, начинающиеся с "ИТОГО" или "Всего"
-  if (trimmed.startsWith('ИТОГО') || trimmed.startsWith('Всего')) {
+  // Игнорируем пустые строки и служебные записи
+  if (trimmed === '' || trimmed.startsWith('ИТОГО') || trimmed.startsWith('Всего') || trimmed.startsWith('№')) {
     return 'ignore';
   }
   
-  // Раздел: оканчивается на "-" и не содержит точек
+  // Раздел: оканчивается на "-" и не содержит точек (например: "1-", "6-")
   if (trimmed.endsWith('-') && !trimmed.includes('.')) {
     return 'section';
   }
   
-  // Подраздел: оканчивается на "-" и содержит точку
+  // Подраздел: оканчивается на "-" и содержит точку (например: "1.1-", "6.2-")
   if (trimmed.endsWith('-') && trimmed.includes('.')) {
     return 'subsection';
   }
   
-  // Работа: не оканчивается на "-"
-  if (!trimmed.endsWith('-')) {
+  // Работа: не оканчивается на "-" и содержит цифры (например: "1.1.1", "6.2.3")
+  if (!trimmed.endsWith('-') && /\d/.test(trimmed)) {
     return 'task';
   }
   
@@ -97,7 +97,7 @@ export function parseHierarchicalExcel(buffer: Buffer): ParsedRecord[] {
     
     if (!row || row.length === 0) continue;
     
-    const index = row[1]?.toString()?.trim(); // Столбец B (индекс 1)
+    const index = row[1]?.toString()?.trim(); // Столбец B (шифр)
     const title = row[2]?.toString()?.trim();  // Столбец C (наименование)
     const unit = row[3]?.toString()?.trim();   // Столбец D (единица измерения)
     const costPrice = row[4]?.toString()?.trim(); // Столбец E (себестоимость)
@@ -184,7 +184,8 @@ export async function importHierarchicalStructure(buffer: Buffer): Promise<Impor
           continue;
         }
         
-        if (!record.unit || !record.price) {
+        // Для работ обязательны единица измерения и цена
+        if (!record.unit || !record.price || record.unit === "" || record.price === "") {
           errors.push(`Строка ${record.orderNum + 2}: отсутствуют обязательные поля (единица измерения или цена) для работы "${record.index}"`);
           continue;
         }
@@ -194,7 +195,7 @@ export async function importHierarchicalStructure(buffer: Buffer): Promise<Impor
           displayIndex: record.index,
           title: record.title,
           unit: record.unit,
-          costPrice: record.costPrice || null,
+          costPrice: record.costPrice && record.costPrice !== "" ? record.costPrice : null,
           price: record.price,
           parentSectionId,
           orderNum: record.orderNum

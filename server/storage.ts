@@ -289,30 +289,59 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getHierarchicalStructure(): Promise<HierarchicalWorkStructure> {
-    const allSections = await db.query.sections.findMany({
-      with: {
-        children: {
-          with: {
-            children: true,
-            tasks: true,
-          }
-        },
-        tasks: true,
-      },
-      orderBy: sections.orderNum,
-    });
-
-    // Фильтруем только корневые разделы (без родителя)
-    const rootSections = allSections.filter(section => !section.parentId);
-    
-    const totalSections = allSections.length;
+    // Получаем все разделы и задачи отдельно
+    const allSections = await this.getSections();
     const allTasks = await this.getTasks();
-    const totalTasks = allTasks.length;
-
+    
+    // Строим иерархию программно
+    const sectionMap = new Map<string, any>();
+    
+    // Создаем карту всех разделов
+    allSections.forEach(section => {
+      sectionMap.set(section.id, {
+        ...section,
+        children: [],
+        tasks: []
+      });
+    });
+    
+    // Добавляем задачи к соответствующим разделам
+    allTasks.forEach(task => {
+      const parentSection = sectionMap.get(task.parentSectionId);
+      if (parentSection) {
+        parentSection.tasks.push(task);
+      }
+    });
+    
+    // Строим дерево разделов
+    const rootSections: any[] = [];
+    allSections.forEach(section => {
+      const sectionWithChildren = sectionMap.get(section.id);
+      if (!section.parentId) {
+        rootSections.push(sectionWithChildren);
+      } else {
+        const parent = sectionMap.get(section.parentId);
+        if (parent) {
+          parent.children.push(sectionWithChildren);
+        }
+      }
+    });
+    
+    // Сортируем по orderNum
+    const sortByOrder = (items: any[]) => {
+      items.sort((a, b) => a.orderNum - b.orderNum);
+      items.forEach(item => {
+        if (item.children) sortByOrder(item.children);
+        if (item.tasks) item.tasks.sort((a: any, b: any) => a.orderNum - b.orderNum);
+      });
+    };
+    
+    sortByOrder(rootSections);
+    
     return {
-      sections: rootSections as SectionWithChildren[],
-      totalSections,
-      totalTasks,
+      sections: rootSections,
+      totalSections: allSections.length,
+      totalTasks: allTasks.length,
     };
   }
 }
