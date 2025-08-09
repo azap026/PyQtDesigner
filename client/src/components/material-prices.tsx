@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -141,16 +141,21 @@ export function MaterialPrices() {
     },
   });
 
-  const filteredMaterials = materials.filter(material => {
-    // Фильтр по поисковому запросу
-    const matchesSearch = material.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      material.unit.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    // Фильтр только с ошибками
-    const matchesErrorFilter = showOnlyErrors ? hasMaterialIssues(material) : true;
-    
-    return matchesSearch && matchesErrorFilter;
-  });
+  // Мемоизированная фильтрация для производительности
+  const filteredMaterials = useMemo(() => {
+    return materials.filter(material => {
+      // Фильтр по поисковому запросу
+      const searchLower = searchTerm.toLowerCase();
+      const matchesSearch = !searchTerm || 
+        material.name.toLowerCase().includes(searchLower) ||
+        material.unit.toLowerCase().includes(searchLower);
+      
+      // Фильтр только с ошибками
+      const matchesErrorFilter = showOnlyErrors ? hasMaterialIssues(material) : true;
+      
+      return matchesSearch && matchesErrorFilter;
+    });
+  }, [materials, searchTerm, showOnlyErrors]);
 
   const handleEditPrice = (materialId: string, currentPrice: string | number) => {
     setEditingMaterial(materialId);
@@ -316,8 +321,9 @@ export function MaterialPrices() {
               placeholder="Поиск по названию или единице измерения..."
               value={searchTerm}
               onChange={(e) => {
-                setSearchTerm(e.target.value);
-                if (e.target.value && showOnlyErrors) {
+                const value = e.target.value;
+                setSearchTerm(value);
+                if (value && showOnlyErrors) {
                   setShowOnlyErrors(false); // Отключаем фильтр ошибок при поиске
                 }
               }}
@@ -353,7 +359,12 @@ export function MaterialPrices() {
             <div>
               <CardTitle>Цены на материалы</CardTitle>
               <CardDescription>
-                Показано {filteredMaterials.length} из {materials.length} материалов
+                Показано {Math.min(100, filteredMaterials.length)} из {materials.length} материалов
+                {filteredMaterials.length > 100 && (
+                  <span className="text-orange-600 dark:text-orange-400 font-medium">
+                    {" "}(лимит 100 для производительности)
+                  </span>
+                )}
                 {showOnlyErrors && (
                   <span className="text-red-600 dark:text-red-400 font-medium">
                     {" "}(только с ошибками)
@@ -386,7 +397,7 @@ export function MaterialPrices() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredMaterials.map((material, index) => {
+                  {filteredMaterials.slice(0, 100).map((material, index) => {
                     const hasIssues = hasMaterialIssues(material);
                     const issues = getMaterialIssues(material);
                     
