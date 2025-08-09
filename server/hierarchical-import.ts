@@ -78,14 +78,49 @@ export function findParentIndex(index: string): string | null {
  * Парсит Excel файл и определяет структуру
  */
 export function parseHierarchicalExcel(buffer: Buffer): ParsedRecord[] {
-  const workbook = XLSX.read(buffer, { type: "buffer" });
-  const sheetName = workbook.SheetNames[0];
-  const worksheet = workbook.Sheets[sheetName];
+  // Проверяем, является ли файл CSV или Excel
+  const fileStr = buffer.toString('utf8');
+  const isCSV = fileStr.includes(',') || fileStr.includes(';');
   
-  const jsonData = XLSX.utils.sheet_to_json(worksheet, { 
-    header: 1,
-    defval: null 
-  });
+  let jsonData: any[][];
+  
+  if (isCSV) {
+    // Для CSV файлов - парсим как текст с правильной кодировкой
+    const lines = fileStr.split('\n').filter(line => line.trim().length > 0);
+    jsonData = lines.map(line => {
+      // Разделяем по запятым, учитывая кавычки
+      const result: string[] = [];
+      let current = '';
+      let inQuotes = false;
+      
+      for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        if (char === '"') {
+          inQuotes = !inQuotes;
+        } else if (char === ',' && !inQuotes) {
+          result.push(current.trim());
+          current = '';
+        } else {
+          current += char;
+        }
+      }
+      result.push(current.trim());
+      return result;
+    });
+  } else {
+    // Для Excel файлов
+    const workbook = XLSX.read(buffer, { 
+      type: "buffer",
+      codepage: 65001 // UTF-8 кодировка
+    });
+    const sheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[sheetName];
+    
+    jsonData = XLSX.utils.sheet_to_json(worksheet, { 
+      header: 1,
+      defval: null 
+    });
+  }
 
   const records: ParsedRecord[] = [];
   let orderNum = 0;
