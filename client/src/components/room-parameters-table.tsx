@@ -55,10 +55,26 @@ export function RoomParametersTable({ onDataChange }: RoomParametersTableProps) 
     return room.length;
   };
 
+  const calculateWindow1Area = (room: RoomData): number => {
+    return (room.window1_a || 0) * (room.window1_b || 0);
+  };
+
+  const calculateWindow2Area = (room: RoomData): number => {
+    return (room.window2_a || 0) * (room.window2_b || 0);
+  };
+
+  const calculateWindow3Area = (room: RoomData): number => {
+    return (room.window3_a || 0) * (room.window3_b || 0);
+  };
+
+  const calculatePortalArea = (room: RoomData): number => {
+    return (room.portal_a || 0) * (room.portal_b || 0);
+  };
+
   const calculateWindowSlopes = (room: RoomData): number => {
-    const window1Area = room.window1_a * room.window1_b;
-    const window2Area = room.window2_a * room.window2_b;
-    const window3Area = room.window3_a * room.window3_b;
+    const window1Area = calculateWindow1Area(room);
+    const window2Area = calculateWindow2Area(room);
+    const window3Area = calculateWindow3Area(room);
     return 2 * (window1Area + window2Area + window3Area);
   };
 
@@ -142,6 +158,12 @@ export function RoomParametersTable({ onDataChange }: RoomParametersTableProps) 
     {
       label: "",
       bg: "bg-purple-50 dark:bg-purple-900/20",
+      type: "calculated" as const,
+      calculator: calculateWindow1Area,
+    },
+    {
+      label: "",
+      bg: "bg-purple-50 dark:bg-purple-900/20",
       secondary: "L=",
       type: "input" as const,
       field: "window1_a" as keyof RoomData,
@@ -157,6 +179,12 @@ export function RoomParametersTable({ onDataChange }: RoomParametersTableProps) 
       label: "Окно 2: Длина/Высота, (м2)",
       bg: "bg-purple-50 dark:bg-purple-900/20",
       type: "header" as const,
+    },
+    {
+      label: "",
+      bg: "bg-purple-50 dark:bg-purple-900/20",
+      type: "calculated" as const,
+      calculator: calculateWindow2Area,
     },
     {
       label: "",
@@ -180,6 +208,12 @@ export function RoomParametersTable({ onDataChange }: RoomParametersTableProps) 
     {
       label: "",
       bg: "bg-purple-50 dark:bg-purple-900/20",
+      type: "calculated" as const,
+      calculator: calculateWindow3Area,
+    },
+    {
+      label: "",
+      bg: "bg-purple-50 dark:bg-purple-900/20",
       secondary: "L=",
       type: "input" as const,
       field: "window3_a" as keyof RoomData,
@@ -195,6 +229,12 @@ export function RoomParametersTable({ onDataChange }: RoomParametersTableProps) 
       label: "Портал: Длина/Высота, (м2)",
       bg: "bg-purple-50 dark:bg-purple-900/20",
       type: "header" as const,
+    },
+    {
+      label: "",
+      bg: "bg-purple-50 dark:bg-purple-900/20",
+      type: "calculated" as const,
+      calculator: calculatePortalArea,
     },
     {
       label: "",
