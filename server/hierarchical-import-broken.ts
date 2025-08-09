@@ -1,8 +1,16 @@
-import XLSX from 'xlsx';
-import { storage } from './storage';
+import * as XLSX from "xlsx";
+import { storage } from "./storage";
 import { InsertSection, InsertTask } from "@shared/schema";
 
-interface ParsedRecord {
+export interface ImportResult {
+  imported: {
+    sections: number;
+    tasks: number;
+  };
+  errors: string[];
+}
+
+export interface ParsedRecord {
   index: string;
   title: string;
   unit?: string;
@@ -10,14 +18,6 @@ interface ParsedRecord {
   price?: string;
   type: 'section' | 'subsection' | 'task' | 'ignore';
   orderNum: number;
-}
-
-interface ImportResult {
-  imported: {
-    sections: number;
-    tasks: number;
-  };
-  errors: string[];
 }
 
 /**
@@ -170,6 +170,7 @@ export async function importHierarchicalStructure(buffer: Buffer): Promise<Impor
     } catch (error) {
       errors.push(`Строка ${record.orderNum + 2}: ${error instanceof Error ? error.message : 'неизвестная ошибка'}`);
     }
+  }
   }
   
   // Затем создаем все работы
