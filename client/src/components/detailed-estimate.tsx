@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Card,
@@ -10,6 +10,26 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Table,
   TableBody,
@@ -27,22 +47,53 @@ import {
   HardHat,
   RefreshCw,
   Link,
+  Plus,
+  Minus,
+  Trash2,
+  CheckIcon,
+  ChevronsUpDown,
 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
-import type { ProjectWithWorkItems } from "@shared/schema";
+import type { ProjectWithWorkItems, Material, WorkItem, InsertWorkItem, InsertWorkMaterial } from "@shared/schema";
+import { cn } from "@/lib/utils";
 
 interface DetailedEstimateProps {
   projectId: string;
 }
 
+interface EstimateRow {
+  id: string;
+  type: 'work' | 'material';
+  workId?: string;
+  materialId?: string;
+  name: string;
+  unit: string;
+  quantity: number;
+  pricePerUnit: number;
+  totalCost: number;
+  parentWorkId?: string;
+}
+
 export function DetailedEstimate({ projectId }: DetailedEstimateProps) {
   const [projectTitle, setProjectTitle] = useState("Сметный расчет по объекту: г. Москва, Шмитовский проезд");
+  const [estimateRows, setEstimateRows] = useState<EstimateRow[]>([]);
+  const [openCombobox, setOpenCombobox] = useState<string | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const { data: project, isLoading } = useQuery<ProjectWithWorkItems>({
     queryKey: ["/api/projects", projectId],
     enabled: !!projectId,
+  });
+
+  // Загружаем материалы для автодополнения
+  const { data: materials = [] } = useQuery<Material[]>({
+    queryKey: ["/api/materials"],
+  });
+
+  // Загружаем иерархическую структуру работ
+  const { data: hierarchy } = useQuery({
+    queryKey: ["/api/hierarchy"],
   });
 
   // Синхронизация с иерархической структурой
@@ -54,7 +105,7 @@ export function DetailedEstimate({ projectId }: DetailedEstimateProps) {
       queryClient.invalidateQueries({ queryKey: ["/api/projects", projectId] });
       toast({
         title: "Синхронизация завершена",
-        description: `Синхронизировано работ: ${data.syncedWorks}, связано с материалами: ${data.linkedWorks}`,
+        description: `Синхронизировано работ: ${(data as any).syncedWorks}, связано с материалами: ${(data as any).linkedWorks}`,
       });
     },
     onError: (error) => {
@@ -63,6 +114,46 @@ export function DetailedEstimate({ projectId }: DetailedEstimateProps) {
         description: "Не удалось синхронизировать с иерархической структурой",
         variant: "destructive",
       });
+    },
+  });
+
+  // Мутация для создания новой работы
+  const createWorkMutation = useMutation({
+    mutationFn: async (workData: InsertWorkItem) => {
+      return apiRequest("POST", `/api/projects/${projectId}/work-items`, workData);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/projects", projectId] });
+    },
+  });
+
+  // Мутация для создания связи работа-материал
+  const createWorkMaterialMutation = useMutation({
+    mutationFn: async (data: InsertWorkMaterial) => {
+      return apiRequest("POST", `/api/work-items/${data.workItemId}/materials`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/projects", projectId] });
+    },
+  });
+
+  // Мутация для удаления работы
+  const deleteWorkMutation = useMutation({
+    mutationFn: async (workId: string) => {
+      return apiRequest("DELETE", `/api/work-items/${workId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/projects", projectId] });
+    },
+  });
+
+  // Мутация для удаления материала из работы
+  const deleteWorkMaterialMutation = useMutation({
+    mutationFn: async (workMaterialId: string) => {
+      return apiRequest("DELETE", `/api/work-materials/${workMaterialId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/projects", projectId] });
     },
   });
 
@@ -136,6 +227,169 @@ export function DetailedEstimate({ projectId }: DetailedEstimateProps) {
 
     return { worksCost, materialsCost, laborCost };
   }, [project]);
+
+  // Получаем все доступные работы из иерархии
+  const availableWorks = useMemo(() => {
+    if (!(hierarchy as any)?.sections) return [];
+    const works: any[] = [];
+    (hierarchy as any).sections.forEach((section: any) => {
+      if (section.tasks) {
+        section.tasks.forEach((task: any) => {
+          works.push({
+            id: task.id,
+            code: task.index,
+            name: `${task.index} ${task.title}`,
+            unit: task.unit,
+            costPrice: task.costPrice,
+            sectionName: section.title
+          });
+        });
+      }
+    });
+    return works;
+  }, [hierarchy]);
+
+  // Добавить новую работу
+  const addWork = async (selectedWork?: any) => {
+    const newWorkData: InsertWorkItem = {
+      projectId: projectId,
+      name: selectedWork ? selectedWork.name : "Новая работа",
+      description: selectedWork?.sectionName || "",
+      unit: selectedWork?.unit || "м²",
+      pricePerUnit: selectedWork?.costPrice || "0",
+      costPrice: selectedWork?.costPrice || "0",
+      workCode: selectedWork?.code || "",
+      sectionName: selectedWork?.sectionName || "",
+      hierarchyTaskId: selectedWork?.id || null,
+      volume: "0"
+    };
+
+    try {
+      const newWork = await createWorkMutation.mutateAsync(newWorkData);
+      
+      // Автоматически добавляем 3 строки материалов
+      if (selectedWork?.id) {
+        await addDefaultMaterials((newWork as any).id, selectedWork.code);
+      }
+      
+      toast({
+        title: "Работа добавлена",
+        description: "Работа успешно добавлена в смету",
+      });
+    } catch (error) {
+      toast({
+        title: "Ошибка",
+        description: "Не удалось добавить работу",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Добавить материалы по умолчанию к работе
+  const addDefaultMaterials = async (workId: string, workCode: string) => {
+    // Ищем подходящие материалы для данного типа работы
+    const relatedMaterials = materials.filter(material => {
+      const materialName = material.name.toLowerCase();
+      const workCodeLower = workCode.toLowerCase();
+      
+      // Логика поиска материалов по типу работы
+      if (workCodeLower.includes("демонтаж") || workCodeLower.includes("2.")) {
+        return materialName.includes("мешок") || materialName.includes("пакет");
+      }
+      if (workCodeLower.includes("краск") || workCodeLower.includes("шпакл")) {
+        return materialName.includes("краска") || materialName.includes("шпаклевка");
+      }
+      return false;
+    });
+
+    // Добавляем до 3 материалов или создаем пустые строки
+    const materialsToAdd = relatedMaterials.slice(0, 3);
+    
+    for (let i = 0; i < 3; i++) {
+      const material = materialsToAdd[i];
+      if (material) {
+        const workMaterialData: InsertWorkMaterial = {
+          workItemId: workId,
+          materialId: material.id,
+          consumptionNorm: "1.0",
+          consumptionUnit: "шт/м²"
+        };
+        
+        try {
+          await createWorkMaterialMutation.mutateAsync(workMaterialData);
+        } catch (error) {
+          console.error("Error adding material:", error);
+        }
+      }
+    }
+  };
+
+  // Добавить материал к существующей работе
+  const addMaterialToWork = async (workId: string, materialId?: string) => {
+    if (!materialId) {
+      toast({
+        title: "Выберите материал",
+        description: "Необходимо выбрать материал из списка",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const workMaterialData: InsertWorkMaterial = {
+      workItemId: workId,
+      materialId: materialId,
+      consumptionNorm: "1.0",
+      consumptionUnit: "шт/м²"
+    };
+
+    try {
+      await createWorkMaterialMutation.mutateAsync(workMaterialData);
+      toast({
+        title: "Материал добавлен",
+        description: "Материал успешно добавлен к работе",
+      });
+    } catch (error) {
+      toast({
+        title: "Ошибка",
+        description: "Не удалось добавить материал",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Удалить работу
+  const removeWork = async (workId: string) => {
+    try {
+      await deleteWorkMutation.mutateAsync(workId);
+      toast({
+        title: "Работа удалена",
+        description: "Работа успешно удалена из сметы",
+      });
+    } catch (error) {
+      toast({
+        title: "Ошибка",
+        description: "Не удалось удалить работу",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Удалить материал
+  const removeMaterial = async (workMaterialId: string) => {
+    try {
+      await deleteWorkMaterialMutation.mutateAsync(workMaterialId);
+      toast({
+        title: "Материал удален",
+        description: "Материал успешно удален из работы",
+      });
+    } catch (error) {
+      toast({
+        title: "Ошибка",
+        description: "Не удалось удалить материал",
+        variant: "destructive",
+      });
+    }
+  };
 
   const exportToExcel = () => {
     toast({
@@ -280,6 +534,7 @@ export function DetailedEstimate({ projectId }: DetailedEstimateProps) {
                   <TableHead className="text-center w-32">На единицу</TableHead>
                   <TableHead className="text-center w-32">Материалы</TableHead>
                   <TableHead className="text-center w-32">Оплата труда</TableHead>
+                  <TableHead className="text-center w-24">Действия</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -290,6 +545,42 @@ export function DetailedEstimate({ projectId }: DetailedEstimateProps) {
                       <TableCell className="font-bold">{sectionIndex + 1}</TableCell>
                       <TableCell colSpan={8} className="font-bold text-blue-700 dark:text-blue-300">
                         {sectionName}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <div className="flex space-x-1">
+                          <Popover open={openCombobox === `section-${sectionIndex}`} onOpenChange={(open) => setOpenCombobox(open ? `section-${sectionIndex}` : null)}>
+                            <PopoverTrigger asChild>
+                              <Button variant="outline" size="sm" className="h-8 w-8 p-0">
+                                <Plus className="h-4 w-4" />
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-80 p-0">
+                              <Command>
+                                <CommandInput placeholder="Поиск работы..." />
+                                <CommandEmpty>Работы не найдены.</CommandEmpty>
+                                <CommandGroup>
+                                  <CommandList className="max-h-60">
+                                    {availableWorks.filter(work => work.sectionName?.toLowerCase().includes(sectionName.toLowerCase())).map((work) => (
+                                      <CommandItem
+                                        key={work.id}
+                                        value={work.name}
+                                        onSelect={() => {
+                                          addWork(work);
+                                          setOpenCombobox(null);
+                                        }}
+                                      >
+                                        <div className="flex flex-col">
+                                          <span className="font-medium">{work.name}</span>
+                                          <span className="text-xs text-gray-500">{work.unit} • ₽{work.costPrice}</span>
+                                        </div>
+                                      </CommandItem>
+                                    ))}
+                                  </CommandList>
+                                </CommandGroup>
+                              </Command>
+                            </PopoverContent>
+                          </Popover>
+                        </div>
                       </TableCell>
                     </TableRow>
                     
@@ -316,9 +607,22 @@ export function DetailedEstimate({ projectId }: DetailedEstimateProps) {
                             {work.workMaterials.length > 0 && (
                               <div className="mt-2 space-y-1">
                                 {work.workMaterials.map((wm) => (
-                                  <div key={wm.id} className="text-xs text-gray-600 dark:text-gray-400 flex items-center">
-                                    <Package className="h-3 w-3 mr-1" />
-                                    {wm.material.name} ({wm.consumptionNorm} {wm.consumptionUnit})
+                                  <div key={wm.id} className="text-xs text-gray-600 dark:text-gray-400 flex items-center justify-between">
+                                    <div className="flex items-center">
+                                      <Package className="h-3 w-3 mr-1" />
+                                      {wm.material.name} ({wm.consumptionNorm} {wm.consumptionUnit})
+                                    </div>
+                                    <Button 
+                                      variant="ghost" 
+                                      size="sm" 
+                                      className="h-4 w-4 p-0 text-red-500 hover:text-red-700"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        removeMaterial(wm.id);
+                                      }}
+                                    >
+                                      <Minus className="h-3 w-3" />
+                                    </Button>
                                   </div>
                                 ))}
                               </div>
@@ -365,6 +669,50 @@ export function DetailedEstimate({ projectId }: DetailedEstimateProps) {
                           </TableCell>
                           <TableCell className="text-right">
                             ₽ {laborCost.toLocaleString('ru-RU', { minimumFractionDigits: 2 })}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <div className="flex space-x-1">
+                              <Popover open={openCombobox === `work-${work.id}`} onOpenChange={(open) => setOpenCombobox(open ? `work-${work.id}` : null)}>
+                                <PopoverTrigger asChild>
+                                  <Button variant="outline" size="sm" className="h-7 w-7 p-0">
+                                    <Plus className="h-3 w-3" />
+                                  </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-80 p-0">
+                                  <Command>
+                                    <CommandInput placeholder="Поиск материала..." />
+                                    <CommandEmpty>Материалы не найдены.</CommandEmpty>
+                                    <CommandGroup>
+                                      <CommandList className="max-h-60">
+                                        {materials.map((material) => (
+                                          <CommandItem
+                                            key={material.id}
+                                            value={material.name}
+                                            onSelect={() => {
+                                              addMaterialToWork(work.id, material.id);
+                                              setOpenCombobox(null);
+                                            }}
+                                          >
+                                            <div className="flex flex-col">
+                                              <span className="font-medium">{material.name}</span>
+                                              <span className="text-xs text-gray-500">{material.unit} • ₽{material.pricePerUnit}</span>
+                                            </div>
+                                          </CommandItem>
+                                        ))}
+                                      </CommandList>
+                                    </CommandGroup>
+                                  </Command>
+                                </PopoverContent>
+                              </Popover>
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="h-7 w-7 p-0 text-red-500 hover:text-red-700"
+                                onClick={() => removeWork(work.id)}
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </div>
                           </TableCell>
                         </TableRow>
                       );
@@ -426,6 +774,7 @@ export function DetailedEstimate({ projectId }: DetailedEstimateProps) {
                   <TableCell className="text-right">
                     ₽ {totalEstimate.laborCost.toLocaleString('ru-RU', { minimumFractionDigits: 2 })}
                   </TableCell>
+                  <TableCell></TableCell>
                 </TableRow>
               </TableBody>
             </Table>

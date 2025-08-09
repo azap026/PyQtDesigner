@@ -209,6 +209,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Create work material for specific work item
+  app.post("/api/work-items/:workItemId/materials", async (req, res) => {
+    try {
+      const { workItemId } = req.params;
+      const workMaterialData = insertWorkMaterialSchema.parse({
+        ...req.body,
+        workItemId
+      });
+      
+      const workMaterial = await storage.createWorkMaterial(workMaterialData);
+      res.status(201).json(workMaterial);
+    } catch (error) {
+      console.error("Error creating work material:", error);
+      res.status(500).json({ error: "Failed to create work material" });
+    }
+  });
+
   app.delete("/api/work-items/:id", async (req, res) => {
     try {
       await storage.deleteWorkItem(req.params.id);
