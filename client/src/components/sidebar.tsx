@@ -32,6 +32,7 @@ const navigationItems = [
 const settingsItems = [
   { id: "works-db", label: "База работ", icon: Hammer },
   { id: "materials-db", label: "База материалов", icon: Package },
+  { id: "hierarchy-db", label: "Иерархическая структура", icon: FileSpreadsheet },
 ];
 
 export function Sidebar({

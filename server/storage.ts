@@ -3,6 +3,8 @@ import {
   materials, 
   workItems, 
   workMaterials,
+  sections,
+  tasks,
   type Project, 
   type InsertProject,
   type Material,
@@ -11,8 +13,14 @@ import {
   type InsertWorkItem,
   type WorkMaterial,
   type InsertWorkMaterial,
+  type Section,
+  type InsertSection,
+  type Task,
+  type InsertTask,
   type ProjectWithWorkItems,
-  type WorkItemWithMaterials
+  type WorkItemWithMaterials,
+  type SectionWithChildren,
+  type HierarchicalWorkStructure
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc } from "drizzle-orm";
@@ -44,6 +52,21 @@ export interface IStorage {
   createWorkMaterial(workMaterial: InsertWorkMaterial): Promise<WorkMaterial>;
   updateWorkMaterial(id: string, workMaterial: Partial<InsertWorkMaterial>): Promise<WorkMaterial>;
   deleteWorkMaterial(id: string): Promise<void>;
+
+  // Hierarchical Work Structure
+  getSections(): Promise<Section[]>;
+  getSection(id: string): Promise<Section | undefined>;
+  createSection(section: InsertSection): Promise<Section>;
+  updateSection(id: string, section: Partial<InsertSection>): Promise<Section>;
+  deleteSection(id: string): Promise<void>;
+  
+  getTasks(): Promise<Task[]>;
+  getTask(id: string): Promise<Task | undefined>;
+  createTask(task: InsertTask): Promise<Task>;
+  updateTask(id: string, task: Partial<InsertTask>): Promise<Task>;
+  deleteTask(id: string): Promise<void>;
+  
+  getHierarchicalStructure(): Promise<HierarchicalWorkStructure>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -202,6 +225,95 @@ export class DatabaseStorage implements IStorage {
 
   async deleteWorkMaterial(id: string): Promise<void> {
     await db.delete(workMaterials).where(eq(workMaterials.id, id));
+  }
+
+  // Hierarchical Work Structure
+  async getSections(): Promise<Section[]> {
+    return await db.select().from(sections).orderBy(sections.orderNum);
+  }
+
+  async getSection(id: string): Promise<Section | undefined> {
+    const [section] = await db.select().from(sections).where(eq(sections.id, id));
+    return section;
+  }
+
+  async createSection(insertSection: InsertSection): Promise<Section> {
+    const [section] = await db
+      .insert(sections)
+      .values({ ...insertSection, updatedAt: new Date() })
+      .returning();
+    return section;
+  }
+
+  async updateSection(id: string, updateSection: Partial<InsertSection>): Promise<Section> {
+    const [section] = await db
+      .update(sections)
+      .set({ ...updateSection, updatedAt: new Date() })
+      .where(eq(sections.id, id))
+      .returning();
+    return section;
+  }
+
+  async deleteSection(id: string): Promise<void> {
+    await db.delete(sections).where(eq(sections.id, id));
+  }
+
+  async getTasks(): Promise<Task[]> {
+    return await db.select().from(tasks).orderBy(tasks.orderNum);
+  }
+
+  async getTask(id: string): Promise<Task | undefined> {
+    const [task] = await db.select().from(tasks).where(eq(tasks.id, id));
+    return task;
+  }
+
+  async createTask(insertTask: InsertTask): Promise<Task> {
+    const [task] = await db
+      .insert(tasks)
+      .values({ ...insertTask, updatedAt: new Date() })
+      .returning();
+    return task;
+  }
+
+  async updateTask(id: string, updateTask: Partial<InsertTask>): Promise<Task> {
+    const [task] = await db
+      .update(tasks)
+      .set({ ...updateTask, updatedAt: new Date() })
+      .where(eq(tasks.id, id))
+      .returning();
+    return task;
+  }
+
+  async deleteTask(id: string): Promise<void> {
+    await db.delete(tasks).where(eq(tasks.id, id));
+  }
+
+  async getHierarchicalStructure(): Promise<HierarchicalWorkStructure> {
+    const allSections = await db.query.sections.findMany({
+      with: {
+        children: {
+          with: {
+            children: true,
+            tasks: true,
+          }
+        },
+        tasks: true,
+      },
+      orderBy: sections.orderNum,
+    });
+
+    // Фильтруем только корневые разделы (без родителя)
+    const rootSections = allSections.filter(section => !section.parentId);
+    
+    const totalSections = allSections.length;
+    const allTasks = await this.getTasks();
+    const totalTasks = allTasks.length;
+
+    return {
+      sections: rootSections as SectionWithChildren[],
+      totalSections,
+      totalTasks,
+    };
   }
 }
 

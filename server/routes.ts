@@ -3,11 +3,14 @@ import { createServer, type Server } from "http";
 import multer from "multer";
 import * as XLSX from "xlsx";
 import { storage } from "./storage";
+import { importHierarchicalStructure } from "./hierarchical-import";
 import { 
   insertProjectSchema,
   insertMaterialSchema,
   insertWorkItemSchema,
-  insertWorkMaterialSchema
+  insertWorkMaterialSchema,
+  insertSectionSchema,
+  insertTaskSchema
 } from "@shared/schema";
 
 // Configure multer for file uploads
@@ -668,7 +671,256 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Hierarchical Work Structure API
+  
+  // Get hierarchical structure
+  app.get("/api/hierarchy", async (req, res) => {
+    try {
+      const structure = await storage.getHierarchicalStructure();
+      res.json(structure);
+    } catch (error) {
+      console.error("Error getting hierarchical structure:", error);
+      res.status(500).json({ error: "Failed to get hierarchical structure" });
+    }
+  });
 
+  // Import hierarchical structure from Excel
+  app.post("/api/hierarchy/import", upload.single("file"), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: "No file uploaded" });
+      }
+
+      const result = await importHierarchicalStructure(req.file.buffer);
+      res.json(result);
+    } catch (error) {
+      console.error("Error importing hierarchical structure:", error);
+      res.status(500).json({ error: "Failed to import hierarchical structure" });
+    }
+  });
+
+  // Clear hierarchy data
+  app.delete("/api/hierarchy/clear", async (req, res) => {
+    try {
+      // Delete all tasks first (due to foreign key constraints)
+      const tasks = await storage.getTasks();
+      for (const task of tasks) {
+        await storage.deleteTask(task.id);
+      }
+
+      // Then delete all sections
+      const sections = await storage.getSections();
+      for (const section of sections) {
+        await storage.deleteSection(section.id);
+      }
+
+      res.json({ message: "Hierarchical structure cleared successfully" });
+    } catch (error) {
+      console.error("Error clearing hierarchy:", error);
+      res.status(500).json({ error: "Failed to clear hierarchical structure" });
+    }
+  });
+
+  // Download hierarchical template
+  app.get("/api/hierarchy/template", (req, res) => {
+    try {
+      const templateData = [
+        [
+          "№", 
+          "Шифр", 
+          "Наименование работ и затрат", 
+          "Ед. изм.", 
+          "Себестоимость", 
+          "Цена"
+        ],
+        [
+          "1", 
+          "6-", 
+          "ЗЕМЛЯНЫЕ РАБОТЫ", 
+          "", 
+          "", 
+          ""
+        ],
+        [
+          "2", 
+          "6.1-", 
+          "Разработка грунта", 
+          "", 
+          "", 
+          ""
+        ],
+        [
+          "3", 
+          "6.1.1", 
+          "Разработка грунта экскаватором в отвал", 
+          "м³", 
+          "120.50", 
+          "180.75"
+        ],
+        [
+          "4", 
+          "6.1.2", 
+          "Разработка грунта вручную", 
+          "м³", 
+          "450.00", 
+          "675.00"
+        ],
+        [
+          "5", 
+          "6.2-", 
+          "Засыпка и уплотнение", 
+          "", 
+          "", 
+          ""
+        ],
+        [
+          "6", 
+          "6.2.1", 
+          "Засыпка траншей и котлованов грунтом", 
+          "м³", 
+          "85.30", 
+          "128.95"
+        ],
+        [
+          "7", 
+          "7-", 
+          "БЕТОННЫЕ И ЖЕЛЕЗОБЕТОННЫЕ РАБОТЫ", 
+          "", 
+          "", 
+          ""
+        ],
+        [
+          "8", 
+          "7.1-", 
+          "Устройство фундаментов", 
+          "", 
+          "", 
+          ""
+        ],
+        [
+          "9", 
+          "7.1.1", 
+          "Устройство бетонной подготовки", 
+          "м³", 
+          "2800.00", 
+          "4200.00"
+        ]
+      ];
+
+      const workbook = XLSX.utils.book_new();
+      const worksheet = XLSX.utils.aoa_to_sheet(templateData);
+      
+      // Set column widths
+      worksheet['!cols'] = [
+        { width: 8 },  // №
+        { width: 12 }, // Шифр
+        { width: 50 }, // Наименование
+        { width: 15 }, // Ед. изм.
+        { width: 15 }, // Себестоимость
+        { width: 15 }, // Цена
+      ];
+
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Иерархическая структура");
+      
+      const buffer = XLSX.write(workbook, { 
+        type: "buffer", 
+        bookType: "xlsx" 
+      });
+
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', 'attachment; filename=template_hierarchy.xlsx');
+      res.send(buffer);
+    } catch (error) {
+      console.error("Error creating hierarchy template:", error);
+      res.status(500).json({ error: "Failed to create hierarchy template" });
+    }
+  });
+
+  // Sections CRUD
+  app.get("/api/sections", async (req, res) => {
+    try {
+      const sections = await storage.getSections();
+      res.json(sections);
+    } catch (error) {
+      console.error("Error getting sections:", error);
+      res.status(500).json({ error: "Failed to get sections" });
+    }
+  });
+
+  app.post("/api/sections", async (req, res) => {
+    try {
+      const validatedData = insertSectionSchema.parse(req.body);
+      const section = await storage.createSection(validatedData);
+      res.json(section);
+    } catch (error) {
+      console.error("Error creating section:", error);
+      res.status(500).json({ error: "Failed to create section" });
+    }
+  });
+
+  app.put("/api/sections/:id", async (req, res) => {
+    try {
+      const validatedData = insertSectionSchema.partial().parse(req.body);
+      const section = await storage.updateSection(req.params.id, validatedData);
+      res.json(section);
+    } catch (error) {
+      console.error("Error updating section:", error);
+      res.status(500).json({ error: "Failed to update section" });
+    }
+  });
+
+  app.delete("/api/sections/:id", async (req, res) => {
+    try {
+      await storage.deleteSection(req.params.id);
+      res.json({ message: "Section deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting section:", error);
+      res.status(500).json({ error: "Failed to delete section" });
+    }
+  });
+
+  // Tasks CRUD
+  app.get("/api/tasks", async (req, res) => {
+    try {
+      const tasks = await storage.getTasks();
+      res.json(tasks);
+    } catch (error) {
+      console.error("Error getting tasks:", error);
+      res.status(500).json({ error: "Failed to get tasks" });
+    }
+  });
+
+  app.post("/api/tasks", async (req, res) => {
+    try {
+      const validatedData = insertTaskSchema.parse(req.body);
+      const task = await storage.createTask(validatedData);
+      res.json(task);
+    } catch (error) {
+      console.error("Error creating task:", error);
+      res.status(500).json({ error: "Failed to create task" });
+    }
+  });
+
+  app.put("/api/tasks/:id", async (req, res) => {
+    try {
+      const validatedData = insertTaskSchema.partial().parse(req.body);
+      const task = await storage.updateTask(req.params.id, validatedData);
+      res.json(task);
+    } catch (error) {
+      console.error("Error updating task:", error);
+      res.status(500).json({ error: "Failed to update task" });
+    }
+  });
+
+  app.delete("/api/tasks/:id", async (req, res) => {
+    try {
+      await storage.deleteTask(req.params.id);
+      res.json({ message: "Task deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting task:", error);
+      res.status(500).json({ error: "Failed to delete task" });
+    }
+  });
 
   const httpServer = createServer(app);
   return httpServer;

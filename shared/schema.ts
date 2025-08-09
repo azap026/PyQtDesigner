@@ -130,3 +130,77 @@ export type WorkItemWithMaterials = WorkItem & {
     material: Material;
   })[];
 };
+
+// Hierarchical work structure tables
+export const sections = pgTable("sections", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  index: text("index").notNull(), // хранится без минуса (например: "6", "6.1")
+  displayIndex: text("display_index").notNull(), // для отображения (например: "6-", "6.1-")
+  title: text("title").notNull(),
+  parentId: varchar("parent_id").references(() => sections.id, { onDelete: "cascade" }),
+  orderNum: integer("order_num").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const tasks = pgTable("tasks", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  index: text("index").notNull(), // например: "6.1.1"
+  displayIndex: text("display_index").notNull(), // например: "6.1.1"
+  title: text("title").notNull(),
+  unit: text("unit").notNull(), // единица измерения (м², м.п., шт и т.п.)
+  costPrice: decimal("cost_price", { precision: 10, scale: 2 }), // себестоимость за единицу
+  price: decimal("price", { precision: 10, scale: 2 }).notNull(), // цена за единицу
+  parentSectionId: varchar("parent_section_id").notNull().references(() => sections.id, { onDelete: "cascade" }),
+  orderNum: integer("order_num").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Relations for hierarchical structure
+export const sectionsRelations = relations(sections, ({ one, many }) => ({
+  parent: one(sections, {
+    fields: [sections.parentId],
+    references: [sections.id],
+  }),
+  children: many(sections),
+  tasks: many(tasks),
+}));
+
+export const tasksRelations = relations(tasks, ({ one }) => ({
+  parentSection: one(sections, {
+    fields: [tasks.parentSectionId],
+    references: [sections.id],
+  }),
+}));
+
+// New schemas (must be defined before types that reference them)
+export const insertSectionSchema = createInsertSchema(sections).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertTaskSchema = createInsertSchema(tasks).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+// New types for hierarchical structure
+export type Section = typeof sections.$inferSelect;
+export type InsertSection = z.infer<typeof insertSectionSchema>;
+
+export type Task = typeof tasks.$inferSelect;
+export type InsertTask = z.infer<typeof insertTaskSchema>;
+
+export type SectionWithChildren = Section & {
+  children: SectionWithChildren[];
+  tasks: Task[];
+};
+
+export type HierarchicalWorkStructure = {
+  sections: SectionWithChildren[];
+  totalSections: number;
+  totalTasks: number;
+};
