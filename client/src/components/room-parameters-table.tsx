@@ -93,7 +93,7 @@ export function RoomParametersTable({ onDataChange }: RoomParametersTableProps) 
 
   const rows = [
     {
-      label: "Длина",
+      label: "Периметр",
       bg: "bg-yellow-50 dark:bg-yellow-900/20",
       type: "input" as const,
       field: "length" as keyof RoomData,
@@ -261,8 +261,8 @@ export function RoomParametersTable({ onDataChange }: RoomParametersTableProps) 
       <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg text-xs">
         <h4 className="font-semibold mb-2">Автоматические расчеты:</h4>
         <ul className="space-y-1 text-gray-600 dark:text-gray-400">
-          <li>• <strong>Площадь стен:</strong> Длина × Высота</li>
-          <li>• <strong>Площадь пола:</strong> Длина</li>
+          <li>• <strong>Площадь стен:</strong> Периметр × Высота</li>
+          <li>• <strong>Площадь пола:</strong> Периметр</li>
           <li>• <strong>Оконные откосы:</strong> 2 × (Сумма площадей всех окон)</li>
         </ul>
       </div>
