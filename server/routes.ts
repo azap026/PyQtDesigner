@@ -368,8 +368,127 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Quick Materials Database Import
+  app.post("/api/materials/import-base", async (req, res) => {
+    try {
+      const baseMaterials = [
+        {
+          name: "Кирпич керамический",
+          unit: "шт",
+          pricePerUnit: "12.50",
+          supplier: "ООО Стройматериалы",
+          notes: "Красный лицевой кирпич",
+          consumptionRate: "510",
+          consumptionUnit: "шт/м³",
+          weightPerUnit: "2.5",
+          weightUnit: "кг/шт"
+        },
+        {
+          name: "Цемент М400",
+          unit: "кг",
+          pricePerUnit: "8.50",
+          supplier: "Завод ЖБИ-1",
+          notes: "Портландцемент",
+          consumptionRate: "350",
+          consumptionUnit: "кг/м³"
+        },
+        {
+          name: "Песок строительный",
+          unit: "м³",
+          pricePerUnit: "850.00",
+          supplier: "Карьер Песок",
+          notes: "Мытый песок фракция 0-5мм",
+          weightPerUnit: "1.6",
+          weightUnit: "т/м³"
+        },
+        {
+          name: "Щебень гранитный 5-20",
+          unit: "м³",
+          pricePerUnit: "1200.00",
+          supplier: "Карьер Гранит",
+          notes: "Фракция 5-20мм",
+          weightPerUnit: "1.4",
+          weightUnit: "т/м³"
+        },
+        {
+          name: "Арматура А500С Ø12",
+          unit: "м",
+          pricePerUnit: "45.00",
+          supplier: "Металлбаза",
+          notes: "Рифленая арматура",
+          weightPerUnit: "0.888",
+          weightUnit: "кг/м"
+        },
+        {
+          name: "Доска обрезная 50×150×6000",
+          unit: "м³",
+          pricePerUnit: "15000.00",
+          supplier: "Лесобаза",
+          notes: "Сосна 1 сорт",
+          weightPerUnit: "500",
+          weightUnit: "кг/м³"
+        },
+        {
+          name: "Утеплитель минеральная вата",
+          unit: "м³",
+          pricePerUnit: "3500.00",
+          supplier: "ТеплоСтрой",
+          notes: "Плотность 50кг/м³",
+          weightPerUnit: "50",
+          weightUnit: "кг/м³"
+        },
+        {
+          name: "Гипсокартон 12.5мм",
+          unit: "м²",
+          pricePerUnit: "280.00",
+          supplier: "ГипсПром",
+          notes: "Стандартный ГКЛ",
+          weightPerUnit: "10",
+          weightUnit: "кг/м²"
+        },
+        {
+          name: "Краска водоэмульсионная",
+          unit: "л",
+          pricePerUnit: "320.00",
+          supplier: "ЛакКрас",
+          notes: "Белая матовая",
+          consumptionRate: "0.15",
+          consumptionUnit: "л/м²"
+        },
+        {
+          name: "Плитка керамическая",
+          unit: "м²",
+          pricePerUnit: "850.00",
+          supplier: "КерамПлюс",
+          notes: "Настенная 300×300мм"
+        }
+      ];
+
+      let importedCount = 0;
+      const errors: string[] = [];
+
+      for (const materialData of baseMaterials) {
+        try {
+          const validatedData = insertMaterialSchema.parse(materialData);
+          await storage.createMaterial(validatedData);
+          importedCount++;
+        } catch (error) {
+          errors.push(`${materialData.name}: ${error instanceof Error ? error.message : 'неизвестная ошибка'}`);
+        }
+      }
+
+      res.json({ 
+        imported: importedCount, 
+        errors: errors.length > 0 ? errors : undefined 
+      });
+    } catch (error) {
+      console.error("Error importing base materials:", error);
+      res.status(500).json({ error: "Failed to import base materials" });
+    }
+  });
+
   // Work Items Import
-  app.post("/api/work-items/import", upload.single("file"), async (req, res) => {
+  app.post("/api/work-items-import", upload.single("file"), async (req, res) => {
     try {
       if (!req.file) {
         return res.status(400).json({ error: "No file uploaded" });
@@ -442,7 +561,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Work Items Template Download
-  app.get("/api/work-items/template", (req, res) => {
+  app.get("/api/work-items-template", (req, res) => {
     try {
       const templateData = [
         [

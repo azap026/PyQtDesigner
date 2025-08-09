@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Edit, Trash2, Package, Search } from "lucide-react";
+import { Plus, Edit, Trash2, Package, Search, Database } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -39,6 +39,26 @@ export function MaterialsDatabase() {
       toast({
         title: "Ошибка",
         description: "Не удалось удалить материал",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const importBaseMaterialsMutation = useMutation({
+    mutationFn: async () => {
+      return apiRequest("POST", "/api/materials/import-base");
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/materials"] });
+      toast({
+        title: "Успех",
+        description: `Импортировано ${data.imported} материалов в базу`,
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Ошибка импорта",
+        description: "Не удалось импортировать базу материалов",
         variant: "destructive",
       });
     },
@@ -84,12 +104,21 @@ export function MaterialsDatabase() {
           </CardTitle>
           <div className="flex space-x-2">
             <Button
+              onClick={() => importBaseMaterialsMutation.mutate()}
+              variant="outline"
+              className="text-green-600 border-green-600 hover:bg-green-600 hover:text-white"
+              disabled={importBaseMaterialsMutation.isPending}
+            >
+              <Database className="h-4 w-4 mr-2" />
+              {importBaseMaterialsMutation.isPending ? "Загрузка..." : "Загрузить базу"}
+            </Button>
+            <Button
               onClick={() => setIsImportModalOpen(true)}
               variant="outline"
               className="text-primary border-primary hover:bg-primary hover:text-white"
             >
               <Plus className="h-4 w-4 mr-2" />
-              Импорт
+              Импорт Excel
             </Button>
             <Button
               onClick={handleAddMaterial}

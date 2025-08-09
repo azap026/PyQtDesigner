@@ -34,7 +34,7 @@ export function WorkImportModal({ isOpen, onClose }: WorkImportModalProps) {
       formData.append("file", data.file);
       formData.append("projectId", data.projectId);
       
-      const response = await fetch("/api/work-items/import", {
+      const response = await fetch("/api/work-items-import", {
         method: "POST",
         body: formData,
       });
@@ -136,7 +136,7 @@ export function WorkImportModal({ isOpen, onClose }: WorkImportModalProps) {
 
   const downloadTemplate = async () => {
     try {
-      const response = await fetch("/api/work-items/template");
+      const response = await fetch("/api/work-items-template");
       if (response.ok) {
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
