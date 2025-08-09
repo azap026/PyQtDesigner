@@ -10,6 +10,7 @@ import { MaterialModal } from "@/components/material-modal";
 
 import { MaterialPrices } from "@/components/material-prices";
 import { HierarchyDatabase } from "@/components/hierarchy-database";
+import { DetailedEstimate } from "@/components/detailed-estimate";
 import { useToast } from "@/hooks/use-toast";
 import type { ProjectWithWorkItems, WorkItem, Project } from "@shared/schema";
 
@@ -211,7 +212,11 @@ export default function Dashboard() {
                 <HierarchyDatabase />
               )}
 
-              {(activeTab === "materials" || activeTab === "estimate" || activeTab === "reports") && (
+              {activeTab === "estimate" && (
+                <DetailedEstimate projectId={currentProjectId} />
+              )}
+
+              {(activeTab === "materials" || activeTab === "reports") && (
                 <div className="flex items-center justify-center h-full">
                   <div className="text-center text-gray-500 dark:text-gray-400">
                     <h3 className="text-lg font-medium mb-2">Раздел в разработке</h3>

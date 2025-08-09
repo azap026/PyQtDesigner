@@ -120,3 +120,6 @@ User prefers Russian language for all interface and communication.
 - Fixed import issues with Russian number format (comma to dot conversion)
 - Enhanced automatic parent section creation for missing hierarchical relationships
 - Improved record type detection to properly handle subsections without units
+- **Comprehensive Material Prices Management**: Full Excel import/export system with error detection and filtering
+- **Performance Optimization**: Added search performance improvements with memoization and display limits
+- **Detailed Estimate Component**: Professional construction estimate interface matching industry standards with section grouping, material images, and cost breakdowns
