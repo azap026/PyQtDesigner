@@ -527,11 +527,6 @@ export function WorksEstimate({ projectId }: WorksEstimateProps) {
                                     </Button>
                                   )}
                                   <div className="font-medium">{work.title}</div>
-                                  {work.materials.length > 0 && (
-                                    <Badge variant="outline" className="ml-2 text-xs">
-                                      {work.materials.length} мат.
-                                    </Badge>
-                                  )}
                                 </div>
                               </TableCell>
                               <TableCell className="text-center">
