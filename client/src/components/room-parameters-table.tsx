@@ -41,18 +41,18 @@ export function RoomParametersTable({ onDataChange }: RoomParametersTableProps) 
 
   // Вычисляемые поля
   const calculateWallArea = (room: RoomData): number => {
-    if (!room.length || !room.width || !room.height) return 0;
-    return 2 * (room.length + room.width) * room.height;
+    if (!room.length || !room.height) return 0;
+    return room.length * room.height;
   };
 
   const calculateFloorArea = (room: RoomData): number => {
-    if (!room.length || !room.width) return 0;
-    return room.length * room.width;
+    if (!room.length) return 0;
+    return room.length;
   };
 
   const calculatePerimeter = (room: RoomData): number => {
-    if (!room.length || !room.width) return 0;
-    return 2 * (room.length + room.width);
+    if (!room.length) return 0;
+    return room.length;
   };
 
   const calculateWindowSlopes = (room: RoomData): number => {
@@ -97,12 +97,6 @@ export function RoomParametersTable({ onDataChange }: RoomParametersTableProps) 
       bg: "bg-yellow-50 dark:bg-yellow-900/20",
       type: "input" as const,
       field: "length" as keyof RoomData,
-    },
-    {
-      label: "Ширина",
-      bg: "bg-yellow-50 dark:bg-yellow-900/20",
-      type: "input" as const,
-      field: "width" as keyof RoomData,
     },
     {
       label: "Площадь стен",
@@ -273,9 +267,9 @@ export function RoomParametersTable({ onDataChange }: RoomParametersTableProps) 
       <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg text-xs">
         <h4 className="font-semibold mb-2">Автоматические расчеты:</h4>
         <ul className="space-y-1 text-gray-600 dark:text-gray-400">
-          <li>• <strong>Площадь стен:</strong> 2 × (Длина + Ширина) × Высота</li>
-          <li>• <strong>Площадь пола:</strong> Длина × Ширина</li>
-          <li>• <strong>Периметр:</strong> 2 × (Длина + Ширина)</li>
+          <li>• <strong>Площадь стен:</strong> Длина × Высота</li>
+          <li>• <strong>Площадь пола:</strong> Длина</li>
+          <li>• <strong>Периметр:</strong> Длина</li>
           <li>• <strong>Оконные откосы:</strong> 2 × (Сумма площадей всех окон)</li>
         </ul>
       </div>
