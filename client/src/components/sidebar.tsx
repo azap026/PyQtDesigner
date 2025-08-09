@@ -8,7 +8,8 @@ import {
   Calculator, 
   BarChart3,
   FileText,
-  FileSpreadsheet
+  FileSpreadsheet,
+  DollarSign
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -31,6 +32,7 @@ const navigationItems = [
 
 const settingsItems = [
   { id: "materials-db", label: "База материалов", icon: Package },
+  { id: "material-prices", label: "Цены на материалы", icon: DollarSign },
   { id: "hierarchy-db", label: "База работ", icon: Hammer },
 ];
 
