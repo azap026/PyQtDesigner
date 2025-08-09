@@ -6,6 +6,7 @@ interface RoomData {
   height: number;
   openings: number;
   doors: number;
+  floorArea: number;
   window1_a: number;
   window1_b: number;
   window2_a: number;
@@ -28,6 +29,7 @@ export function RoomParametersTable({ onDataChange }: RoomParametersTableProps) 
       height: 0,
       openings: 0,
       doors: 0,
+      floorArea: 0,
       window1_a: 0,
       window1_b: 0,
       window2_a: 0,
@@ -122,9 +124,9 @@ export function RoomParametersTable({ onDataChange }: RoomParametersTableProps) 
     },
     {
       label: "Площадь пола",
-      bg: "bg-yellow-50 dark:bg-yellow-900/20",
-      type: "calculated" as const,
-      calculator: calculateFloorArea,
+      bg: "bg-white dark:bg-gray-800",
+      type: "input" as const,
+      field: "floorArea" as keyof RoomData,
     },
     {
       label: "Проемы",
@@ -282,7 +284,7 @@ export function RoomParametersTable({ onDataChange }: RoomParametersTableProps) 
         <h4 className="font-semibold mb-2">Автоматические расчеты:</h4>
         <ul className="space-y-1 text-gray-600 dark:text-gray-400">
           <li>• <strong>Площадь стен:</strong> Периметр × Высота</li>
-          <li>• <strong>Площадь пола:</strong> Периметр</li>
+          <li>• <strong>Площадь пола:</strong> Ручной ввод</li>
           <li>• <strong>Оконные/дверные откосы:</strong> 2 × (Сумма площадей всех окон)</li>
         </ul>
       </div>
