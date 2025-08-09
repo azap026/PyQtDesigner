@@ -33,6 +33,33 @@ export function MaterialPrices() {
     queryKey: ["/api/materials"],
   });
 
+  // Функция для определения проблем с материалом
+  const getMaterialIssues = (material: Material): string[] => {
+    const issues: string[] = [];
+    
+    if (!material.pricePerUnit || parseFloat(material.pricePerUnit) <= 0) {
+      issues.push("Без цены");
+    }
+    
+    if (!material.name || material.name.trim() === "") {
+      issues.push("Без названия");
+    }
+    
+    if (!material.unit || material.unit.trim() === "") {
+      issues.push("Без единицы измерения");
+    }
+    
+    if (material.name && (material.name.toLowerCase().includes('ошибка') || material.name.toLowerCase().includes('error'))) {
+      issues.push("Ошибка в названии");
+    }
+    
+    return issues;
+  };
+
+  const hasMaterialIssues = (material: Material): boolean => {
+    return getMaterialIssues(material).length > 0;
+  };
+
   const updatePriceMutation = useMutation({
     mutationFn: async ({ id, price }: { id: string; price: number }) => {
       return apiRequest("PATCH", `/api/materials/${id}`, { pricePerUnit: price.toString() });
@@ -124,33 +151,6 @@ export function MaterialPrices() {
     
     return matchesSearch && matchesErrorFilter;
   });
-
-  // Функция для определения проблем с материалом
-  const getMaterialIssues = (material: Material): string[] => {
-    const issues: string[] = [];
-    
-    if (!material.pricePerUnit || parseFloat(material.pricePerUnit) <= 0) {
-      issues.push("Без цены");
-    }
-    
-    if (!material.name || material.name.trim() === "") {
-      issues.push("Без названия");
-    }
-    
-    if (!material.unit || material.unit.trim() === "") {
-      issues.push("Без единицы измерения");
-    }
-    
-    if (material.name && (material.name.toLowerCase().includes('ошибка') || material.name.toLowerCase().includes('error'))) {
-      issues.push("Ошибка в названии");
-    }
-    
-    return issues;
-  };
-
-  const hasMaterialIssues = (material: Material): boolean => {
-    return getMaterialIssues(material).length > 0;
-  };
 
   const handleEditPrice = (materialId: string, currentPrice: string | number) => {
     setEditingMaterial(materialId);
