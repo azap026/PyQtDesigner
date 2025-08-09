@@ -44,8 +44,11 @@ import {
   Download,
   ChevronDown,
   ChevronRight,
+  Check,
+  X,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useQuery } from "@tanstack/react-query";
 
 // Загружаем полные данные из Excel файла
 import estimateDataJson from '../../../estimate-full-data.json';
@@ -81,8 +84,22 @@ export function WorksEstimate({ projectId }: WorksEstimateProps) {
   const [expandedSections, setExpandedSections] = useState<Set<number>>(new Set([1]));
   const [editingWork, setEditingWork] = useState<any>(null);
   const [newQuantity, setNewQuantity] = useState("");
+  const [editingMaterial, setEditingMaterial] = useState<{ sectionId: number; workIndex: string; materialIndex: number } | null>(null);
+  const [materialSearchTerm, setMaterialSearchTerm] = useState("");
+  const [selectedMaterial, setSelectedMaterial] = useState<any>(null);
   
   const { toast } = useToast();
+
+  // Поиск материалов для автозаполнения
+  const { data: searchResults = [] } = useQuery({
+    queryKey: ['materials', 'search', materialSearchTerm],
+    queryFn: async () => {
+      if (!materialSearchTerm || materialSearchTerm.length < 2) return [];
+      const response = await fetch(`/api/materials/search?q=${encodeURIComponent(materialSearchTerm)}`);
+      return response.json();
+    },
+    enabled: !!materialSearchTerm && materialSearchTerm.length >= 2,
+  });
 
   // Управление раскрытием разделов
   const toggleSection = (sectionId: number) => {
@@ -141,6 +158,45 @@ export function WorksEstimate({ projectId }: WorksEstimateProps) {
         description: `Количество для "${editingWork.title}" изменено на ${quantity}`,
       });
     }
+  };
+
+  const handleEditMaterial = (sectionId: number, workIndex: string, materialIndex: number, currentMaterial: any) => {
+    setEditingMaterial({ sectionId, workIndex, materialIndex });
+    setMaterialSearchTerm(currentMaterial.name);
+    setSelectedMaterial(currentMaterial);
+  };
+
+  const handleSelectMaterial = (material: any) => {
+    if (editingMaterial) {
+      // Находим материал в данных и обновляем его
+      const section = estimateData.sections.find(s => s.id === editingMaterial.sectionId);
+      if (section) {
+        const work = section.works.find(w => w.index === editingMaterial.workIndex);
+        if (work && work.materials[editingMaterial.materialIndex]) {
+          work.materials[editingMaterial.materialIndex] = {
+            ...work.materials[editingMaterial.materialIndex],
+            name: material.name,
+            unit: material.unit,
+            unitPrice: parseFloat(material.pricePerUnit) || 0
+          };
+        }
+      }
+      
+      setEditingMaterial(null);
+      setMaterialSearchTerm("");
+      setSelectedMaterial(null);
+      
+      toast({
+        title: "Материал обновлен",
+        description: `Материал заменен на "${material.name}"`,
+      });
+    }
+  };
+
+  const handleCancelMaterialEdit = () => {
+    setEditingMaterial(null);
+    setMaterialSearchTerm("");
+    setSelectedMaterial(null);
   };
 
   return (
@@ -340,31 +396,93 @@ export function WorksEstimate({ projectId }: WorksEstimateProps) {
                             </TableRow>
                             
                             {/* Материалы */}
-                            {work.materials.map((material, materialIndex) => (
-                              <TableRow 
-                                key={`${section.id}-${work.index}-material-${materialIndex}`}
-                                className="bg-gray-50/50 dark:bg-gray-800/30 border-l-4 border-gray-300"
-                              >
-                                <TableCell className="text-center text-gray-500">{material.unit}</TableCell>
-                                <TableCell className="text-gray-500">{work.index}</TableCell>
-                                <TableCell className="pl-8 text-gray-700 dark:text-gray-300">
-                                  <div className="text-sm">{material.name}</div>
-                                </TableCell>
-                                <TableCell className="text-center text-gray-500">—</TableCell>
-                                <TableCell className="text-center text-gray-500">—</TableCell>
-                                <TableCell className="text-center font-mono text-gray-600">
-                                  {material.quantity.toFixed(3)}
-                                </TableCell>
-                                <TableCell className="text-center text-gray-500">—</TableCell>
-                                <TableCell className="text-center font-mono text-gray-600">
-                                  ₽ {material.unitPrice.toFixed(2)}
-                                </TableCell>
-                                <TableCell className="text-center font-mono text-gray-600">
-                                  ₽ {(material.quantity * material.unitPrice).toFixed(2)}
-                                </TableCell>
-                                <TableCell></TableCell>
-                              </TableRow>
-                            ))}
+                            {work.materials.map((material, materialIndex) => {
+                              const isEditing = editingMaterial && 
+                                editingMaterial.sectionId === section.id && 
+                                editingMaterial.workIndex === work.index && 
+                                editingMaterial.materialIndex === materialIndex;
+                              
+                              return (
+                                <TableRow 
+                                  key={`${section.id}-${work.index}-material-${materialIndex}`}
+                                  className="bg-gray-50/50 dark:bg-gray-800/30 border-l-4 border-gray-300"
+                                >
+                                  <TableCell className="text-center text-gray-500">{material.unit}</TableCell>
+                                  <TableCell className="text-gray-500">{work.index}</TableCell>
+                                  <TableCell className="pl-8 text-gray-700 dark:text-gray-300">
+                                    {isEditing ? (
+                                      <div className="relative">
+                                        <Input
+                                          value={materialSearchTerm}
+                                          onChange={(e) => setMaterialSearchTerm(e.target.value)}
+                                          placeholder="Поиск материала..."
+                                          className="text-sm"
+                                          autoFocus
+                                        />
+                                        {searchResults.length > 0 && (
+                                          <div className="absolute top-full left-0 right-0 z-50 bg-white dark:bg-gray-800 border rounded-md shadow-lg max-h-60 overflow-y-auto">
+                                            {searchResults.map((result: any) => (
+                                              <div
+                                                key={result.id}
+                                                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer border-b last:border-b-0"
+                                                onClick={() => handleSelectMaterial(result)}
+                                              >
+                                                <div className="font-medium text-sm">{result.name}</div>
+                                                <div className="text-xs text-gray-500">
+                                                  {result.unit} • ₽{parseFloat(result.pricePerUnit).toFixed(2)}
+                                                </div>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        )}
+                                        <div className="flex gap-1 mt-1">
+                                          <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            className="h-6 w-6 p-0"
+                                            onClick={handleCancelMaterialEdit}
+                                          >
+                                            <X className="h-3 w-3" />
+                                          </Button>
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <div 
+                                        className="text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 p-1 rounded"
+                                        onClick={() => handleEditMaterial(section.id, work.index, materialIndex, material)}
+                                      >
+                                        {material.name}
+                                      </div>
+                                    )}
+                                  </TableCell>
+                                  <TableCell className="text-center text-gray-500">—</TableCell>
+                                  <TableCell className="text-center text-gray-500">—</TableCell>
+                                  <TableCell className="text-center font-mono text-gray-600">
+                                    {material.quantity.toFixed(3)}
+                                  </TableCell>
+                                  <TableCell className="text-center text-gray-500">—</TableCell>
+                                  <TableCell className="text-center font-mono text-gray-600">
+                                    ₽ {material.unitPrice.toFixed(2)}
+                                  </TableCell>
+                                  <TableCell className="text-center font-mono text-gray-600">
+                                    ₽ {(material.quantity * material.unitPrice).toFixed(2)}
+                                  </TableCell>
+                                  <TableCell>
+                                    {!isEditing && (
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => handleEditMaterial(section.id, work.index, materialIndex, material)}
+                                        className="h-8 w-8 p-0"
+                                        title="Изменить материал"
+                                      >
+                                        <Edit2 className="h-4 w-4" />
+                                      </Button>
+                                    )}
+                                  </TableCell>
+                                </TableRow>
+                              );
+                            })}
                           </React.Fragment>
                         );
                       })}

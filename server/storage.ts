@@ -23,7 +23,7 @@ import {
   type HierarchicalWorkStructure
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, sql } from "drizzle-orm";
 
 export interface IStorage {
   // Projects
@@ -36,6 +36,7 @@ export interface IStorage {
   // Materials
   getMaterials(): Promise<Material[]>;
   getMaterial(id: string): Promise<Material | undefined>;
+  searchMaterials(query: string): Promise<Material[]>;
   createMaterial(material: InsertMaterial): Promise<Material>;
   updateMaterial(id: string, material: Partial<InsertMaterial>): Promise<Material>;
   deleteMaterial(id: string): Promise<void>;
@@ -139,6 +140,13 @@ export class DatabaseStorage implements IStorage {
       .where(eq(materials.id, id))
       .returning();
     return material;
+  }
+
+  async searchMaterials(query: string): Promise<Material[]> {
+    const searchQuery = `%${query.toLowerCase()}%`;
+    return await db.select().from(materials)
+      .where(sql`LOWER(${materials.name}) LIKE ${searchQuery}`)
+      .limit(20);
   }
 
   async deleteMaterial(id: string): Promise<void> {

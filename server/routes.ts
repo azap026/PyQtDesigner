@@ -92,6 +92,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Search materials by name
+  app.get("/api/materials/search", async (req, res) => {
+    try {
+      const { q } = req.query;
+      if (!q || typeof q !== 'string') {
+        return res.json([]);
+      }
+      
+      const materials = await storage.searchMaterials(q);
+      res.json(materials);
+    } catch (error) {
+      console.error("Error searching materials:", error);
+      res.status(500).json({ error: "Failed to search materials" });
+    }
+  });
+
   app.post("/api/materials", async (req, res) => {
     try {
       const materialData = insertMaterialSchema.parse(req.body);
