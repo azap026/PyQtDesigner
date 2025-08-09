@@ -1,346 +1,179 @@
 import { useState, useEffect } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
-import { useToast } from "@/hooks/use-toast";
-import { 
-  Calculator,
-  Link2,
-  Settings,
-  Eye,
-  EyeOff,
-  Save,
-  RotateCcw,
-  HelpCircle
-} from "lucide-react";
-import type { HierarchicalWorkStructure, AreaType, ProjectAreas } from "@shared/schema";
-import { calculateProjectAreas, getAreaByType, suggestAreaType, formatArea } from "@/utils/areaCalculations";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
+import { Search, Settings, Save, CheckCircle, Circle } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { Task, ProjectAreas, AreaType } from "@shared/schema";
+import { getAreaByType, formatArea } from "@/utils/areaCalculations";
 
 interface AreaWorkLinkingProps {
-  roomsData: any[]; // Room data from parameters table
-  onAreaLinkingChange?: (taskId: string, config: AreaLinkConfig) => void;
+  projectAreas?: ProjectAreas;
 }
 
-interface AreaLinkConfig {
-  areaType: AreaType;
-  autoFillFromArea: boolean;
-  areaMultiplier: number;
-}
-
-interface TaskWithAreaConfig {
-  id: string;
-  title: string;
-  index: string;
-  unit: string;
-  costPrice: string;
-  areaType?: AreaType;
-  autoFillFromArea?: boolean;
-  areaMultiplier?: number;
-  suggestedAreaType?: AreaType;
-  calculatedVolume?: number;
-}
-
-export function AreaWorkLinking({ roomsData, onAreaLinkingChange }: AreaWorkLinkingProps) {
-  const [showOnlyLinked, setShowOnlyLinked] = useState(false);
+export default function AreaWorkLinking({ projectAreas }: AreaWorkLinkingProps) {
   const [searchQuery, setSearchQuery] = useState("");
-  const [projectAreas, setProjectAreas] = useState<ProjectAreas | null>(null);
-  const [tasksWithConfig, setTasksWithConfig] = useState<TaskWithAreaConfig[]>([]);
   const [isConfigDialogOpen, setIsConfigDialogOpen] = useState(false);
-  const [selectedTask, setSelectedTask] = useState<TaskWithAreaConfig | null>(null);
-  
-  const queryClient = useQueryClient();
-  const { toast } = useToast();
+  const [selectedTask, setSelectedTask] = useState<Task & {
+    autoFillFromArea?: boolean;
+    areaType?: AreaType;
+    areaMultiplier?: number;
+  } | null>(null);
 
-  // Загружаем иерархическую структуру работ
-  const { data: hierarchy, isLoading } = useQuery<HierarchicalWorkStructure>({
-    queryKey: ["/api/hierarchy"],
+  const queryClient = useQueryClient();
+
+  // Загрузка всех работ
+  const { data: tasks = [] } = useQuery<Task[]>({
+    queryKey: ["/api/hierarchy/tasks"],
   });
 
-  // Рассчитываем площади проекта при изменении данных помещений
-  useEffect(() => {
-    if (roomsData?.length > 0) {
-      const areas = calculateProjectAreas(roomsData);
-      setProjectAreas(areas);
-    }
-  }, [roomsData]);
+  // Загрузка настроек привязки площадей
+  const { data: areaConfigs = [] } = useQuery<Array<{
+    taskId: string;
+    autoFillFromArea: boolean;
+    areaType: AreaType;
+    areaMultiplier: number;
+  }>>({
+    queryKey: ["/api/area-configs"],
+  });
 
-  // Подготавливаем список работ с конфигурацией площадей
-  useEffect(() => {
-    if (hierarchy?.sections && projectAreas) {
-      const allTasks: TaskWithAreaConfig[] = [];
-      
-      const collectTasks = (sections: any[]) => {
-        sections.forEach(section => {
-          section.tasks?.forEach((task: any) => {
-            const suggestedType = suggestAreaType(task.title);
-            const currentArea = getAreaByType(projectAreas, task.areaType || suggestedType);
-            const multiplier = parseFloat(task.areaMultiplier || "1.0");
-            
-            allTasks.push({
-              id: task.id,
-              title: task.title,
-              index: task.index || task.displayIndex,
-              unit: task.unit,
-              costPrice: task.costPrice,
-              areaType: task.areaType || undefined,
-              autoFillFromArea: task.autoFillFromArea || false,
-              areaMultiplier: multiplier,
-              suggestedAreaType: suggestedType,
-              calculatedVolume: currentArea * multiplier
-            });
-          });
-          
-          if (section.children) {
-            collectTasks(section.children);
-          }
-        });
-      };
-      
-      collectTasks(hierarchy.sections);
-      setTasksWithConfig(allTasks);
-    }
-  }, [hierarchy, projectAreas]);
-
-  // Мутация для обновления конфигурации работы
-  const updateTaskConfigMutation = useMutation({
-    mutationFn: async ({ taskId, config }: { taskId: string; config: AreaLinkConfig }) => {
-      const response = await fetch(`/api/hierarchy/tasks/${taskId}/area-config`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
+  // Сохранение настроек
+  const saveConfigMutation = useMutation({
+    mutationFn: async (config: {
+      taskId: string;
+      autoFillFromArea: boolean;
+      areaType?: AreaType;
+      areaMultiplier?: number;
+    }) => {
+      return apiRequest(`/api/area-configs`, {
+        method: "POST",
         body: JSON.stringify(config),
       });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      return response.json();
     },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/hierarchy"] });
-      
-      // Обновляем локальное состояние
-      setTasksWithConfig(prev => prev.map(task => 
-        task.id === variables.taskId 
-          ? { ...task, ...variables.config }
-          : task
-      ));
-      
-      toast({
-        title: "Настройки сохранены",
-        description: "Конфигурация привязки площадей обновлена",
-      });
-      
-      onAreaLinkingChange?.(variables.taskId, variables.config);
-    },
-    onError: (error) => {
-      toast({
-        title: "Ошибка",
-        description: "Не удалось сохранить настройки",
-        variant: "destructive",
-      });
-      console.error("Update error:", error);
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/area-configs"] });
+      setIsConfigDialogOpen(false);
     },
   });
 
-  // Фильтрация работ
-  const filteredTasks = tasksWithConfig.filter(task => {
-    const matchesSearch = task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         task.index.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesFilter = !showOnlyLinked || task.autoFillFromArea;
-    
-    return matchesSearch && matchesFilter;
-  });
+  // Фильтрация работ по поисковому запросу
+  const filteredTasks = tasks.filter(task =>
+    task.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    task.index?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
-  // Статистика
-  const linkedTasksCount = tasksWithConfig.filter(task => task.autoFillFromArea).length;
-  const totalTasksCount = tasksWithConfig.length;
+  // Получение конфигурации для задачи
+  const getTaskConfig = (taskId: string) => {
+    return areaConfigs.find(config => config.taskId === taskId);
+  };
 
-  const handleConfigureTask = (task: TaskWithAreaConfig) => {
-    setSelectedTask(task);
+  // Обработка настройки задачи
+  const handleConfigureTask = (task: Task) => {
+    const config = getTaskConfig(task.id);
+    setSelectedTask({
+      ...task,
+      autoFillFromArea: config?.autoFillFromArea || false,
+      areaType: config?.areaType || "ручной",
+      areaMultiplier: config?.areaMultiplier || 1.0,
+    });
     setIsConfigDialogOpen(true);
   };
 
+  // Сохранение конфигурации
   const handleSaveConfig = () => {
     if (!selectedTask) return;
-    
-    const config: AreaLinkConfig = {
-      areaType: selectedTask.areaType || "ручной",
+
+    saveConfigMutation.mutate({
+      taskId: selectedTask.id,
       autoFillFromArea: selectedTask.autoFillFromArea || false,
-      areaMultiplier: selectedTask.areaMultiplier || 1.0,
-    };
-    
-    updateTaskConfigMutation.mutate({ taskId: selectedTask.id, config });
-    setIsConfigDialogOpen(false);
+      areaType: selectedTask.areaType,
+      areaMultiplier: selectedTask.areaMultiplier,
+    });
   };
-
-  const handleApplySuggestion = (task: TaskWithAreaConfig) => {
-    if (!task.suggestedAreaType) return;
-    
-    const config: AreaLinkConfig = {
-      areaType: task.suggestedAreaType,
-      autoFillFromArea: true,
-      areaMultiplier: 1.0,
-    };
-    
-    updateTaskConfigMutation.mutate({ taskId: task.id, config });
-  };
-
-  if (isLoading) {
-    return (
-      <Card>
-        <CardContent className="flex items-center justify-center py-8">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-2"></div>
-            <p className="text-gray-500">Загрузка структуры работ...</p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
 
   return (
     <div className="space-y-6">
-      {/* Заголовок и статистика */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <Link2 className="h-5 w-5" />
-                Привязка площадей к работам
-              </CardTitle>
-              <CardDescription>
-                Автоматическое заполнение объемов работ на основе площадей помещений
-              </CardDescription>
-            </div>
-            <div className="flex items-center gap-4">
-              <Badge variant="secondary" className="text-sm">
-                Привязано: {linkedTasksCount} из {totalTasksCount}
-              </Badge>
-            </div>
+          <CardTitle>Привязка площадей к работам</CardTitle>
+          <div className="text-sm text-gray-600">
+            Автоматическое заполнение объемов работ на основе площадей помещений
           </div>
         </CardHeader>
-        
-        {projectAreas && (
-          <CardContent>
-            <div className="grid grid-cols-3 md:grid-cols-6 gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-              <div className="text-center">
-                <div className="text-sm text-gray-500">Пол</div>
-                <div className="font-mono font-bold">{formatArea(projectAreas.totalFloorArea)}</div>
-              </div>
-              <div className="text-center">
-                <div className="text-sm text-gray-500">Потолок</div>
-                <div className="font-mono font-bold">{formatArea(projectAreas.totalCeilingArea)}</div>
-              </div>
-              <div className="text-center">
-                <div className="text-sm text-gray-500">Стены</div>
-                <div className="font-mono font-bold">{formatArea(projectAreas.totalWallArea)}</div>
-              </div>
-              <div className="text-center">
-                <div className="text-sm text-gray-500">Окна</div>
-                <div className="font-mono font-bold">{formatArea(projectAreas.totalWindowArea)}</div>
-              </div>
-              <div className="text-center">
-                <div className="text-sm text-gray-500">Двери</div>
-                <div className="font-mono font-bold">{formatArea(projectAreas.totalDoorArea)}</div>
-              </div>
-              <div className="text-center">
-                <div className="text-sm text-gray-500">Периметр</div>
-                <div className="font-mono font-bold">{formatArea(projectAreas.totalPerimeter, "м.п.")}</div>
-              </div>
-            </div>
-          </CardContent>
-        )}
-      </Card>
-
-      {/* Фильтры и поиск */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex items-center gap-4">
-            <div className="flex-1">
-              <Input
-                placeholder="Поиск работ..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="max-w-sm"
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <Switch
-                checked={showOnlyLinked}
-                onCheckedChange={setShowOnlyLinked}
-              />
-              <Label>Только привязанные</Label>
-            </div>
+        <CardContent className="space-y-4">
+          {/* Поиск */}
+          <div className="relative">
+            <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+            <Input
+              placeholder="Поиск работ..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
           </div>
-        </CardContent>
-      </Card>
 
-      {/* Список работ */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="space-y-2">
-            {filteredTasks.map((task) => (
-              <div
-                key={task.id}
-                className={`flex items-center justify-between p-4 border rounded-lg ${
-                  task.autoFillFromArea ? 'border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/20' : 'border-gray-200 dark:border-gray-700'
-                }`}
-              >
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-sm font-mono text-gray-500">{task.index}</span>
-                    <span className="font-medium">{task.title}</span>
-                    {task.autoFillFromArea && (
-                      <Badge variant="outline" className="text-xs">
-                        {task.areaType}
+          {/* Список работ */}
+          <div className="space-y-2 max-h-[400px] overflow-y-auto">
+            {filteredTasks.map((task) => {
+              const config = getTaskConfig(task.id);
+              const isConfigured = config?.autoFillFromArea;
+              
+              return (
+                <div
+                  key={task.id}
+                  className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50"
+                >
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      {isConfigured ? (
+                        <CheckCircle className="h-4 w-4 text-green-600" />
+                      ) : (
+                        <Circle className="h-4 w-4 text-gray-400" />
+                      )}
+                      <span className="font-medium">{task.index}</span>
+                      <span>{task.title}</span>
+                    </div>
+                    <div className="text-sm text-gray-500 mt-1">
+                      {task.unit} • ₽{parseFloat(task.costPrice || "0").toFixed(2)}
+                    </div>
+                    {isConfigured && config && (
+                      <div className="flex gap-2 mt-1">
+                        <Badge variant="secondary" className="text-xs">
+                          {config.areaType}
+                        </Badge>
+                        {config.areaMultiplier !== 1.0 && (
+                          <Badge variant="outline" className="text-xs">
+                            ×{config.areaMultiplier}
+                          </Badge>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {isConfigured && (
+                      <Badge className="bg-green-100 text-green-800 border-green-200">
+                        Привязано: {config?.areaType} ({config?.areaMultiplier || 1}×{config?.areaMultiplier || 1})
                       </Badge>
                     )}
-                  </div>
-                  <div className="text-sm text-gray-500">
-                    {task.unit} • ₽{parseFloat(task.costPrice).toFixed(2)}
-                    {task.autoFillFromArea && task.calculatedVolume !== undefined && (
-                      <span className="ml-2 font-mono">
-                        → {task.calculatedVolume.toFixed(2)} {task.unit}
-                      </span>
-                    )}
-                  </div>
-                </div>
-                
-                <div className="flex items-center gap-2">
-                  {task.suggestedAreaType && task.suggestedAreaType !== "ручной" && !task.autoFillFromArea && (
+                    
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handleApplySuggestion(task)}
-                      className="text-xs"
+                      onClick={() => handleConfigureTask(task)}
                     >
-                      <Calculator className="h-3 w-3 mr-1" />
-                      Авто: {task.suggestedAreaType}
+                      <Settings className="h-4 w-4" />
                     </Button>
-                  )}
-                  
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleConfigureTask(task)}
-                  >
-                    <Settings className="h-4 w-4" />
-                  </Button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
             
             {filteredTasks.length === 0 && (
               <div className="text-center py-8 text-gray-500">
@@ -353,7 +186,7 @@ export function AreaWorkLinking({ roomsData, onAreaLinkingChange }: AreaWorkLink
 
       {/* Диалог настройки */}
       <Dialog open={isConfigDialogOpen} onOpenChange={setIsConfigDialogOpen}>
-        <DialogContent className="sm:max-w-[500px] max-h-[80vh]">
+        <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>Настройка привязки площадей</DialogTitle>
             <DialogDescription>
@@ -362,12 +195,12 @@ export function AreaWorkLinking({ roomsData, onAreaLinkingChange }: AreaWorkLink
           </DialogHeader>
           
           {selectedTask && (
-            <div className="space-y-4 max-h-[50vh] overflow-y-auto py-4">
+            <div className="space-y-4">
               <div>
                 <Label className="text-sm font-medium text-gray-700">Работа</Label>
                 <div className="mt-1 p-2 bg-gray-50 rounded text-sm">
                   <div className="font-medium">{selectedTask.index} {selectedTask.title}</div>
-                  <div className="text-gray-500">{selectedTask.unit} • ₽{parseFloat(selectedTask.costPrice).toFixed(2)}</div>
+                  <div className="text-gray-500">{selectedTask.unit} • ₽{parseFloat(selectedTask.costPrice || "0").toFixed(2)}</div>
                 </div>
               </div>
               
@@ -441,8 +274,7 @@ export function AreaWorkLinking({ roomsData, onAreaLinkingChange }: AreaWorkLink
                 )}
               </div>
               
-            <div className="border-t pt-4 mt-4">
-              <div className="flex justify-end gap-2">
+              <div className="flex justify-end gap-2 pt-4">
                 <Button
                   variant="outline"
                   onClick={() => setIsConfigDialogOpen(false)}
@@ -451,13 +283,13 @@ export function AreaWorkLinking({ roomsData, onAreaLinkingChange }: AreaWorkLink
                 </Button>
                 <Button 
                   onClick={handleSaveConfig}
+                  disabled={saveConfigMutation.isPending}
                   className="bg-primary hover:bg-primary/90 text-white"
                 >
                   <Save className="h-4 w-4 mr-2" />
-                  Сохранить
+                  {saveConfigMutation.isPending ? "Сохранение..." : "Сохранить"}
                 </Button>
               </div>
-            </div>
             </div>
           )}
         </DialogContent>

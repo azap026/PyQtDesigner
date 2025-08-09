@@ -14,7 +14,7 @@ import { DetailedEstimate } from "@/components/detailed-estimate";
 import { WorksEstimate } from "@/components/works-estimate";
 import { RoomParametersTable } from "@/components/room-parameters-table";
 import { SummaryTable } from "@/components/summary-table";
-import { AreaWorkLinking } from "@/components/area-work-linking";
+import AreaWorkLinking from "@/components/area-work-linking";
 import { useToast } from "@/hooks/use-toast";
 import type { ProjectWithWorkItems, WorkItem, Project } from "@shared/schema";
 
