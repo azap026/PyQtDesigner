@@ -8,7 +8,7 @@ import { ProjectSummary } from "@/components/project-summary";
 import { WorkModal } from "@/components/work-modal";
 import { MaterialModal } from "@/components/material-modal";
 import { MaterialsDatabase } from "@/components/materials-database";
-import { WorksDatabase } from "@/components/works-database";
+
 import { HierarchyDatabase } from "@/components/hierarchy-database";
 import { useToast } from "@/hooks/use-toast";
 import type { ProjectWithWorkItems, WorkItem, Project } from "@shared/schema";
@@ -158,16 +158,14 @@ export default function Dashboard() {
                   {activeTab === "materials" && "Материалы"}
                   {activeTab === "estimate" && "Смета"}
                   {activeTab === "reports" && "Отчеты"}
-                  {activeTab === "works-db" && "База данных работ"}
                   {activeTab === "materials-db" && "База данных материалов"}
-                  {activeTab === "hierarchy-db" && "Иерархическая структура работ"}
+                  {activeTab === "hierarchy-db" && "База работ"}
                 </h2>
                 <p className="text-sm text-gray-500 dark:text-gray-400">
                   {activeTab === "works" && "Управление видами работ и расчёт стоимости"}
                   {activeTab === "materials" && "Управление материалами проекта"}
                   {activeTab === "estimate" && "Просмотр и экспорт сметы"}
                   {activeTab === "reports" && "Отчёты и аналитика"}
-                  {activeTab === "works-db" && "Управление справочником работ"}
                   {activeTab === "materials-db" && "Управление справочником материалов"}
                   {activeTab === "hierarchy-db" && "Управление иерархической структурой работ"}
                 </p>
@@ -209,9 +207,7 @@ export default function Dashboard() {
                 <MaterialsDatabase />
               )}
 
-              {activeTab === "works-db" && (
-                <WorksDatabase />
-              )}
+
 
               {activeTab === "hierarchy-db" && (
                 <HierarchyDatabase />

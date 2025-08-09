@@ -551,7 +551,7 @@ export function HierarchyDatabase() {
         <CardHeader>
           <CardTitle>Управление данными</CardTitle>
           <CardDescription>
-            Импорт иерархической структуры из Excel файла
+            Импорт базы работ из Excel файла
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -742,8 +742,8 @@ export function HierarchyDatabase() {
               </div>
               <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 text-left">
                 <div className="text-sm text-yellow-800 dark:text-yellow-200">
-                  <strong>Важно:</strong> Прикрепленный файл содержит каталог материалов, а не иерархическую структуру работ. 
-                  Скачайте шаблон для иерархической структуры, заполните его и импортируйте.
+                  <strong>Важно:</strong> Прикрепленный файл содержит каталог материалов, а не базу работ. 
+                  Скачайте шаблон для базы работ, заполните его и импортируйте.
                 </div>
               </div>
             </div>
