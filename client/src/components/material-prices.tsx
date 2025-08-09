@@ -24,6 +24,7 @@ export function MaterialPrices() {
   const [searchTerm, setSearchTerm] = useState("");
   const [editingMaterial, setEditingMaterial] = useState<string | null>(null);
   const [editPrice, setEditPrice] = useState("");
+  const [showOnlyErrors, setShowOnlyErrors] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -113,10 +114,16 @@ export function MaterialPrices() {
     },
   });
 
-  const filteredMaterials = materials.filter(material =>
-    material.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    material.unit.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredMaterials = materials.filter(material => {
+    // Фильтр по поисковому запросу
+    const matchesSearch = material.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      material.unit.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    // Фильтр только с ошибками
+    const matchesErrorFilter = showOnlyErrors ? hasMaterialIssues(material) : true;
+    
+    return matchesSearch && matchesErrorFilter;
+  });
 
   // Функция для определения проблем с материалом
   const getMaterialIssues = (material: Material): string[] => {
@@ -214,16 +221,31 @@ export function MaterialPrices() {
             </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card 
+          className={`cursor-pointer transition-colors ${showOnlyErrors ? 'ring-2 ring-red-500 bg-red-50 dark:bg-red-950/20' : 'hover:bg-gray-50 dark:hover:bg-gray-800'}`}
+          onClick={() => {
+            setShowOnlyErrors(!showOnlyErrors);
+            if (!showOnlyErrors) {
+              setSearchTerm(""); // Очищаем поиск при включении фильтра ошибок
+            }
+          }}
+        >
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">С ошибками</CardTitle>
+            <CardTitle className="text-sm font-medium flex items-center space-x-2">
+              <span>С ошибками</span>
+              {showOnlyErrors && (
+                <Badge variant="secondary" className="text-xs">
+                  Активен
+                </Badge>
+              )}
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-red-600">
               {materials.filter(m => hasMaterialIssues(m)).length}
             </div>
             <div className="text-xs text-gray-500 mt-1">
-              Без цен, названий или с ошибками
+              {showOnlyErrors ? "Показаны только ошибки" : "Клик для фильтрации"}
             </div>
           </CardContent>
         </Card>
@@ -282,21 +304,45 @@ export function MaterialPrices() {
         </CardContent>
       </Card>
 
-      {/* Поиск */}
+      {/* Поиск и фильтры */}
       <Card>
         <CardHeader>
-          <CardTitle>Поиск материалов</CardTitle>
+          <CardTitle>Поиск и фильтры</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
           <div className="flex items-center space-x-2">
             <Search className="h-4 w-4 text-gray-400" />
             <Input
               placeholder="Поиск по названию или единице измерения..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                if (e.target.value && showOnlyErrors) {
+                  setShowOnlyErrors(false); // Отключаем фильтр ошибок при поиске
+                }
+              }}
               className="flex-1"
             />
           </div>
+          
+          {showOnlyErrors && (
+            <div className="flex items-center justify-between p-3 bg-red-50 dark:bg-red-950/20 rounded-md border border-red-200 dark:border-red-800">
+              <div className="flex items-center space-x-2">
+                <Badge variant="destructive">Фильтр активен</Badge>
+                <span className="text-sm text-red-700 dark:text-red-300">
+                  Показаны только материалы с ошибками
+                </span>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowOnlyErrors(false)}
+                className="text-red-600 hover:text-red-800"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -308,6 +354,11 @@ export function MaterialPrices() {
               <CardTitle>Цены на материалы</CardTitle>
               <CardDescription>
                 Показано {filteredMaterials.length} из {materials.length} материалов
+                {showOnlyErrors && (
+                  <span className="text-red-600 dark:text-red-400 font-medium">
+                    {" "}(только с ошибками)
+                  </span>
+                )}
               </CardDescription>
             </div>
           </div>
