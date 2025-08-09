@@ -118,6 +118,33 @@ export function MaterialPrices() {
     material.unit.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // Функция для определения проблем с материалом
+  const getMaterialIssues = (material: Material): string[] => {
+    const issues: string[] = [];
+    
+    if (!material.pricePerUnit || parseFloat(material.pricePerUnit) <= 0) {
+      issues.push("Без цены");
+    }
+    
+    if (!material.name || material.name.trim() === "") {
+      issues.push("Без названия");
+    }
+    
+    if (!material.unit || material.unit.trim() === "") {
+      issues.push("Без единицы измерения");
+    }
+    
+    if (material.name && (material.name.toLowerCase().includes('ошибка') || material.name.toLowerCase().includes('error'))) {
+      issues.push("Ошибка в названии");
+    }
+    
+    return issues;
+  };
+
+  const hasMaterialIssues = (material: Material): boolean => {
+    return getMaterialIssues(material).length > 0;
+  };
+
   const handleEditPrice = (materialId: string, currentPrice: string | number) => {
     setEditingMaterial(materialId);
     setEditPrice(currentPrice?.toString() || "");
@@ -189,11 +216,14 @@ export function MaterialPrices() {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Без цен</CardTitle>
+            <CardTitle className="text-sm font-medium">С ошибками</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-red-600">
-              {materials.filter(m => !m.pricePerUnit || parseFloat(m.pricePerUnit) <= 0).length}
+              {materials.filter(m => hasMaterialIssues(m)).length}
+            </div>
+            <div className="text-xs text-gray-500 mt-1">
+              Без цен, названий или с ошибками
             </div>
           </CardContent>
         </Card>
@@ -305,13 +335,39 @@ export function MaterialPrices() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredMaterials.map((material, index) => (
-                    <TableRow key={material.id}>
-                      <TableCell className="font-medium">
-                        {index + 1}
-                      </TableCell>
+                  {filteredMaterials.map((material, index) => {
+                    const hasIssues = hasMaterialIssues(material);
+                    const issues = getMaterialIssues(material);
+                    
+                    return (
+                      <TableRow 
+                        key={material.id}
+                        className={hasIssues ? "bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800" : ""}
+                      >
+                        <TableCell className="font-medium">
+                          <div className="flex items-center space-x-2">
+                            <span>{index + 1}</span>
+                            {hasIssues && (
+                              <div className="flex flex-wrap gap-1">
+                                {issues.map((issue, idx) => (
+                                  <Badge 
+                                    key={idx} 
+                                    variant="destructive" 
+                                    className="text-xs"
+                                    title={issue}
+                                  >
+                                    ⚠
+                                  </Badge>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </TableCell>
                       <TableCell className="max-w-xs">
-                        <div className="truncate" title={material.name}>
+                        <div 
+                          className={`truncate ${hasIssues ? "text-red-700 dark:text-red-300" : ""}`} 
+                          title={hasIssues ? `${material.name} (Проблемы: ${issues.join(', ')})` : material.name}
+                        >
                           {material.name}
                         </div>
                       </TableCell>
@@ -330,11 +386,11 @@ export function MaterialPrices() {
                           </div>
                         ) : (
                           <div className="flex items-center space-x-2">
-                            <span className="font-medium">
-                              {material.pricePerUnit ? `${material.pricePerUnit} ₽` : "Не указана"}
+                            <span className={`font-medium ${!material.pricePerUnit || parseFloat(material.pricePerUnit) <= 0 ? "text-red-600 dark:text-red-400" : ""}`}>
+                              {material.pricePerUnit && parseFloat(material.pricePerUnit) > 0 ? `${material.pricePerUnit} ₽` : "Не указана"}
                             </span>
-                            {!material.pricePerUnit && (
-                              <Badge variant="secondary" className="text-xs">
+                            {(!material.pricePerUnit || parseFloat(material.pricePerUnit) <= 0) && (
+                              <Badge variant="destructive" className="text-xs">
                                 Без цены
                               </Badge>
                             )}
@@ -413,7 +469,8 @@ export function MaterialPrices() {
                         )}
                       </TableCell>
                     </TableRow>
-                  ))}
+                  )})}
+                
                 </TableBody>
               </Table>
             </div>
