@@ -101,21 +101,23 @@ export function RoomParametersTable({ onDataChange }: RoomParametersTableProps) 
   };
 
   const renderInputCell = (roomIndex: number, field: keyof RoomData, bgClass: string) => (
-    <td className="border border-gray-300 dark:border-gray-600 p-0">
+    <td className="border border-gray-400 dark:border-gray-500 p-0">
       <input
         type="number"
         step="0.01"
         value={roomsData[roomIndex][field] || ""}
         onChange={(e) => updateRoomData(roomIndex, field, parseFloat(e.target.value) || 0)}
-        className={`w-full h-8 px-2 border-0 bg-transparent text-center text-sm focus:bg-blue-50 dark:focus:bg-blue-900/20 focus:outline-none focus:ring-1 focus:ring-blue-500 ${bgClass}`}
-        placeholder="0"
+        className={`w-full h-10 px-3 border-0 bg-transparent text-center text-sm font-medium text-gray-800 dark:text-gray-200 focus:bg-blue-50 dark:focus:bg-blue-900/30 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${bgClass}`}
+        placeholder="0.00"
       />
     </td>
   );
 
   const renderCalculatedCell = (value: number, bgClass: string) => (
-    <td className={`border border-gray-300 dark:border-gray-600 px-2 py-1 text-center text-sm ${bgClass}`}>
-      {value ? value.toFixed(2) : "0.00"}
+    <td className={`border border-gray-400 dark:border-gray-500 px-3 py-2 text-center text-sm font-medium text-gray-800 dark:text-gray-200 ${bgClass}`}>
+      <span className="inline-block min-w-[50px]">
+        {value ? value.toFixed(2) : "0.00"}
+      </span>
     </td>
   );
 
@@ -246,16 +248,16 @@ export function RoomParametersTable({ onDataChange }: RoomParametersTableProps) 
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-      <h3 className="text-lg font-semibold mb-4">Габариты помещений</h3>
-      <div className="overflow-x-auto">
-        <table className="w-full border-collapse border border-gray-300 dark:border-gray-600 text-sm">
+      <h3 className="text-xl font-bold mb-6 text-gray-800 dark:text-gray-200">Габариты помещений</h3>
+      <div className="overflow-x-auto shadow-lg rounded-lg">
+        <table className="w-full border-collapse border border-gray-400 dark:border-gray-500 text-sm">
           <thead>
-            <tr className="bg-gray-100 dark:bg-gray-700">
-              <th className="border border-gray-300 dark:border-gray-600 px-2 py-1 text-left font-medium">
+            <tr className="bg-gradient-to-r from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-600">
+              <th className="border border-gray-400 dark:border-gray-500 px-4 py-3 text-left font-bold text-gray-700 dark:text-gray-200 min-w-[200px]">
                 Габариты
               </th>
               {Array.from({ length: 12 }, (_, i) => (
-                <th key={i} className="border border-gray-300 dark:border-gray-600 px-2 py-1 text-center font-medium">
+                <th key={i} className="border border-gray-400 dark:border-gray-500 px-3 py-3 text-center font-semibold text-gray-700 dark:text-gray-200 min-w-[100px] text-xs">
                   {i < 9 ? `Помещение ${i + 1}` : `С/У${i - 8}`}
                 </th>
               ))}
@@ -263,10 +265,12 @@ export function RoomParametersTable({ onDataChange }: RoomParametersTableProps) 
           </thead>
           <tbody>
             {rows.map((row, rowIndex) => (
-              <tr key={rowIndex}>
-                <td className={`border border-gray-300 dark:border-gray-600 px-2 py-1 ${row.bg} font-medium text-right`}>
-                  {row.label}
-                  {row.secondary && <div className="text-center">{row.secondary}</div>}
+              <tr key={rowIndex} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                <td className={`border border-gray-400 dark:border-gray-500 px-4 py-2 ${row.bg} font-semibold text-right text-gray-800 dark:text-gray-200 text-sm min-w-[200px]`}>
+                  <div className="flex flex-col">
+                    <span className="leading-tight">{row.label}</span>
+                    {row.secondary && <span className="text-center text-xs font-normal mt-1 text-gray-600 dark:text-gray-400">{row.secondary}</span>}
+                  </div>
                 </td>
                 {Array.from({ length: 12 }, (_, colIndex) => {
                   if (row.type === "input" && row.field) {
@@ -277,7 +281,7 @@ export function RoomParametersTable({ onDataChange }: RoomParametersTableProps) 
                   } else {
                     // Header or empty cells
                     return (
-                      <td key={colIndex} className={`border border-gray-300 dark:border-gray-600 px-2 py-1 text-center ${row.bg}`}>
+                      <td key={colIndex} className={`border border-gray-400 dark:border-gray-500 px-3 py-2 text-center ${row.bg}`}>
                         {/* Empty cell for headers */}
                       </td>
                     );
@@ -290,13 +294,25 @@ export function RoomParametersTable({ onDataChange }: RoomParametersTableProps) 
       </div>
       
       {/* Формулы справка */}
-      <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg text-xs">
-        <h4 className="font-semibold mb-2">Автоматические расчеты:</h4>
-        <ul className="space-y-1 text-gray-600 dark:text-gray-400">
-          <li>• <strong>Площадь стен:</strong> Периметр × Высота - Проемы</li>
-          <li>• <strong>Площадь пола:</strong> Ручной ввод</li>
-          <li>• <strong>Проемы:</strong> Окно 1 + Окно 2 + Окно 3 + Портал</li>
-          <li>• <strong>Оконные/дверные откосы:</strong> 2 × (Сумма площадей всех окон)</li>
+      <div className="mt-6 p-5 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-700 dark:to-gray-600 rounded-lg border border-blue-200 dark:border-gray-500 shadow-sm">
+        <h4 className="font-bold mb-3 text-gray-800 dark:text-gray-200 text-sm">Автоматические расчеты:</h4>
+        <ul className="space-y-2 text-gray-700 dark:text-gray-300 text-xs">
+          <li className="flex items-start">
+            <span className="text-blue-500 mr-2">•</span>
+            <span><strong className="font-semibold">Площадь стен:</strong> Периметр × Высота - Проемы</span>
+          </li>
+          <li className="flex items-start">
+            <span className="text-green-500 mr-2">•</span>
+            <span><strong className="font-semibold">Площадь пола:</strong> Ручной ввод</span>
+          </li>
+          <li className="flex items-start">
+            <span className="text-orange-500 mr-2">•</span>
+            <span><strong className="font-semibold">Проемы:</strong> Окно 1 + Окно 2 + Окно 3 + Портал</span>
+          </li>
+          <li className="flex items-start">
+            <span className="text-purple-500 mr-2">•</span>
+            <span><strong className="font-semibold">Оконные/дверные откосы:</strong> 2 × (Сумма площадей всех окон)</span>
+          </li>
         </ul>
       </div>
     </div>
