@@ -217,72 +217,77 @@ export default function Dashboard() {
             <div className="flex-1 overflow-y-auto p-6">
               {activeTab === "project-params" && (
                 <div className="space-y-6">
-                  {/* Основные параметры */}
-                  <div className="max-w-2xl">
-                    <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-                      <h3 className="text-lg font-semibold mb-4">Основные параметры объекта</h3>
-                      <div className="space-y-4">
-                        <div>
-                          <label className="block text-sm font-medium mb-2">Название объекта</label>
-                          <input 
-                            type="text" 
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700"
-                            placeholder="Введите название объекта"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium mb-2">Адрес объекта</label>
-                          <input 
-                            type="text" 
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700"
-                            placeholder="Введите адрес объекта"
-                          />
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
+                  {/* Верхняя секция с двумя колонками */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* Основные параметры */}
+                    <div>
+                      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+                        <h3 className="text-lg font-semibold mb-4">Основные параметры объекта</h3>
+                        <div className="space-y-4">
                           <div>
-                            <label className="block text-sm font-medium mb-2">Общая площадь (м²)</label>
+                            <label className="block text-sm font-medium mb-2">Название объекта</label>
                             <input 
-                              type="number" 
+                              type="text" 
                               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700"
-                              placeholder="0"
+                              placeholder="Введите название объекта"
                             />
                           </div>
                           <div>
-                            <label className="block text-sm font-medium mb-2">Количество этажей</label>
+                            <label className="block text-sm font-medium mb-2">Адрес объекта</label>
                             <input 
-                              type="number" 
+                              type="text" 
                               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700"
-                              placeholder="1"
+                              placeholder="Введите адрес объекта"
                             />
                           </div>
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium mb-2">Тип объекта</label>
-                          <select className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700">
-                            <option value="">Выберите тип объекта</option>
-                            <option value="residential">Жилой дом</option>
-                            <option value="commercial">Коммерческое здание</option>
-                            <option value="industrial">Промышленное здание</option>
-                            <option value="other">Другое</option>
-                          </select>
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium mb-2">Примечания</label>
-                          <textarea 
-                            rows={3}
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700"
-                            placeholder="Дополнительная информация об объекте"
-                          />
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-sm font-medium mb-2">Общая площадь (м²)</label>
+                              <input 
+                                type="number" 
+                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700"
+                                placeholder="0"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium mb-2">Количество этажей</label>
+                              <input 
+                                type="number" 
+                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700"
+                                placeholder="1"
+                              />
+                            </div>
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium mb-2">Тип объекта</label>
+                            <select className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700">
+                              <option value="">Выберите тип объекта</option>
+                              <option value="residential">Жилой дом</option>
+                              <option value="commercial">Коммерческое здание</option>
+                              <option value="industrial">Промышленное здание</option>
+                              <option value="other">Другое</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium mb-2">Примечания</label>
+                            <textarea 
+                              rows={3}
+                              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700"
+                              placeholder="Дополнительная информация об объекте"
+                            />
+                          </div>
                         </div>
                       </div>
+                    </div>
+                    
+                    {/* Сводная таблица габаритов */}
+                    <div>
+                      <SummaryTable roomsData={roomsData} />
                     </div>
                   </div>
 
                   {/* Таблица габаритов помещений */}
                   <RoomParametersTable onDataChange={handleRoomDataChange} />
-                  
-                  {/* Сводная таблица габаритов */}
-                  <SummaryTable roomsData={roomsData} />
                 </div>
               )}
 
