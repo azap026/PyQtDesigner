@@ -356,7 +356,24 @@ export function HierarchyDatabase() {
             <CardTitle className="text-sm font-medium">Всего разделов</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{hierarchy?.sections?.filter(s => !s.parentId)?.length || 0}</div>
+            <div className="text-2xl font-bold text-blue-600">{
+              (() => {
+                if (!hierarchy?.sections) return 0;
+                // Подсчитываем все разделы (включая корневые и подразделы)
+                const allSectionsCount = hierarchy.sections.reduce((total, section) => {
+                  let count = 1; // сам раздел
+                  const countChildren = (children) => {
+                    if (!children || !Array.isArray(children)) return 0;
+                    return children.reduce((childTotal, child) => {
+                      return childTotal + 1 + countChildren(child.children);
+                    }, 0);
+                  };
+                  count += countChildren(section.children);
+                  return total + count;
+                }, 0);
+                return allSectionsCount;
+              })()
+            }</div>
           </CardContent>
         </Card>
         <Card>
@@ -364,7 +381,21 @@ export function HierarchyDatabase() {
             <CardTitle className="text-sm font-medium">Всего подразделов</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">{hierarchy?.sections?.filter(s => s.parentId)?.length || 0}</div>
+            <div className="text-2xl font-bold text-green-600">{
+              (() => {
+                if (!hierarchy?.sections) return 0;
+                // Подсчитываем только подразделы (дочерние элементы)
+                const countSubsections = (sections) => {
+                  if (!sections || !Array.isArray(sections)) return 0;
+                  return sections.reduce((total, section) => {
+                    const childrenCount = section.children ? section.children.length : 0;
+                    const grandChildrenCount = countSubsections(section.children);
+                    return total + childrenCount + grandChildrenCount;
+                  }, 0);
+                };
+                return countSubsections(hierarchy.sections);
+              })()
+            }</div>
           </CardContent>
         </Card>
         <Card>
@@ -372,7 +403,7 @@ export function HierarchyDatabase() {
             <CardTitle className="text-sm font-medium">Всего работ</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-purple-600">{hierarchy?.tasks?.length || 0}</div>
+            <div className="text-2xl font-bold text-purple-600">{hierarchy?.totalTasks || 0}</div>
           </CardContent>
         </Card>
 
