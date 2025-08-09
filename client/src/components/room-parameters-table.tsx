@@ -117,12 +117,6 @@ export function RoomParametersTable({ onDataChange }: RoomParametersTableProps) 
       field: "openings" as keyof RoomData,
     },
     {
-      label: "Периметр",
-      bg: "bg-white dark:bg-gray-800",
-      type: "calculated" as const,
-      calculator: calculatePerimeter,
-    },
-    {
       label: "Высота",
       bg: "bg-yellow-50 dark:bg-yellow-900/20",
       type: "input" as const,
@@ -269,7 +263,6 @@ export function RoomParametersTable({ onDataChange }: RoomParametersTableProps) 
         <ul className="space-y-1 text-gray-600 dark:text-gray-400">
           <li>• <strong>Площадь стен:</strong> Длина × Высота</li>
           <li>• <strong>Площадь пола:</strong> Длина</li>
-          <li>• <strong>Периметр:</strong> Длина</li>
           <li>• <strong>Оконные откосы:</strong> 2 × (Сумма площадей всех окон)</li>
         </ul>
       </div>
