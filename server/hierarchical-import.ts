@@ -191,6 +191,12 @@ export function parseHierarchicalExcel(buffer: Buffer): ParsedRecord[] {
       console.log(`Исправили число: "${row[4]}" -> "${costPrice}"`);
     }
     
+    // Обрабатываем некорректные значения вроде "июл.00" (Excel автопреобразование)
+    if (costPrice && /[а-яё]/i.test(costPrice)) {
+      console.log(`Пропускаем некорректное значение себестоимости: "${costPrice}"`);
+      costPrice = ''; // Очищаем некорректное значение
+    }
+    
     // Исправляем Excel Date Serial Numbers для разделов  
     if (index === '36892') index = '1-';     // 1- преобразуется в 36892
     if (index === '36923') index = '2-';     // 2- преобразуется в 36923
