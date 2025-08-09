@@ -35,7 +35,11 @@ export function HierarchyDatabase() {
   const [isCoeffDialogOpen, setIsCoeffDialogOpen] = useState(false);
   const [coefficient, setCoefficient] = useState("");
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set());
+  const [searchSuggestions, setSearchSuggestions] = useState<Array<{id: string, title: string, displayIndex: string, type: 'section' | 'task'}>>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [highlightedTask, setHighlightedTask] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -265,6 +269,76 @@ export function HierarchyDatabase() {
     setCollapsedSections(allSectionIds);
   };
 
+  const generateSearchSuggestions = (query: string) => {
+    if (!hierarchy?.sections || query.length < 2) {
+      setSearchSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+
+    const suggestions: Array<{id: string, title: string, displayIndex: string, type: 'section' | 'task'}> = [];
+    const lowerQuery = query.toLowerCase();
+
+    const collectSuggestions = (sections: any[]) => {
+      sections.forEach(section => {
+        // Добавляем разделы
+        if (section.title.toLowerCase().includes(lowerQuery) || section.displayIndex.toLowerCase().includes(lowerQuery)) {
+          suggestions.push({
+            id: section.id,
+            title: section.title,
+            displayIndex: section.displayIndex,
+            type: 'section'
+          });
+        }
+
+        // Добавляем работы
+        section.tasks?.forEach((task: any) => {
+          if (task.title.toLowerCase().includes(lowerQuery) || task.displayIndex.toLowerCase().includes(lowerQuery)) {
+            suggestions.push({
+              id: task.id,
+              title: task.title,
+              displayIndex: task.displayIndex,
+              type: 'task'
+            });
+          }
+        });
+
+        // Рекурсивно обрабатываем подразделы
+        if (section.children) collectSuggestions(section.children);
+      });
+    };
+
+    collectSuggestions(hierarchy.sections);
+    setSearchSuggestions(suggestions.slice(0, 10)); // Ограничиваем количество подсказок
+    setShowSuggestions(true);
+  };
+
+  const handleSearchInputChange = (value: string) => {
+    setSearchQuery(value);
+    generateSearchSuggestions(value);
+  };
+
+  const handleSuggestionClick = (suggestion: {id: string, title: string, displayIndex: string, type: 'section' | 'task'}) => {
+    setSearchQuery(suggestion.displayIndex + " " + suggestion.title);
+    setShowSuggestions(false);
+    
+    // Подсвечиваем выбранный элемент
+    setHighlightedTask(suggestion.id);
+    setTimeout(() => setHighlightedTask(null), 3000); // Убираем подсветку через 3 секунды
+    
+    // Разворачиваем все разделы для показа найденного элемента
+    if (suggestion.type === 'task') {
+      expandAll();
+    }
+  };
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setShowSuggestions(false);
+    // При нажатии Enter фильтруем по ключевому слову
+    // Логика фильтрации уже работает через filteredSections
+  };
+
   const renderSection = (section: any, level: number = 0) => {
     const indent = level * 20;
     const isCollapsed = collapsedSections.has(section.id);
@@ -308,7 +382,11 @@ export function HierarchyDatabase() {
             {section.tasks?.map((task: any) => (
               <div 
                 key={task.id}
-                className="flex items-center p-2 rounded bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-600"
+                className={`flex items-center p-2 rounded border transition-all duration-500 ${
+                  highlightedTask === task.id 
+                    ? 'bg-yellow-100 dark:bg-yellow-900/30 border-yellow-400 dark:border-yellow-600 shadow-md' 
+                    : 'bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-600'
+                }`}
                 style={{ marginLeft: `${(level + 1) * 20}px` }}
               >
                 <FileText className="h-4 w-4 text-green-500 mr-2" />
@@ -573,14 +651,49 @@ export function HierarchyDatabase() {
           <CardTitle>Поиск и просмотр</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center space-x-2">
-            <Search className="h-4 w-4 text-gray-400" />
-            <Input
-              placeholder="Поиск по названию или шифру..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="flex-1"
-            />
+          <div className="relative">
+            <form onSubmit={handleSearchSubmit} className="flex items-center space-x-2">
+              <Search className="h-4 w-4 text-gray-400" />
+              <Input
+                ref={searchInputRef}
+                placeholder="Поиск по названию или шифру... (Enter для фильтрации)"
+                value={searchQuery}
+                onChange={(e) => handleSearchInputChange(e.target.value)}
+                onFocus={() => searchQuery.length >= 2 && setShowSuggestions(true)}
+                onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                className="flex-1"
+              />
+            </form>
+            
+            {/* Подсказки поиска */}
+            {showSuggestions && searchSuggestions.length > 0 && (
+              <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                {searchSuggestions.map((suggestion, index) => (
+                  <div
+                    key={`${suggestion.type}-${suggestion.id}`}
+                    className="flex items-center p-3 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer border-b border-gray-100 dark:border-gray-700 last:border-b-0"
+                    onClick={() => handleSuggestionClick(suggestion)}
+                  >
+                    {suggestion.type === 'section' ? (
+                      <Folder className="h-4 w-4 text-blue-500 mr-3" />
+                    ) : (
+                      <FileText className="h-4 w-4 text-green-500 mr-3" />
+                    )}
+                    <div className="flex-1">
+                      <div className="font-medium text-sm">
+                        {suggestion.displayIndex}
+                      </div>
+                      <div className="text-xs text-gray-600 dark:text-gray-400">
+                        {suggestion.title}
+                      </div>
+                    </div>
+                    <Badge variant={suggestion.type === 'section' ? 'secondary' : 'outline'} className="text-xs">
+                      {suggestion.type === 'section' ? 'Раздел' : 'Работа'}
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
