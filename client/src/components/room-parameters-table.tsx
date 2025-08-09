@@ -44,7 +44,9 @@ export function RoomParametersTable({ onDataChange }: RoomParametersTableProps) 
   // Вычисляемые поля
   const calculateWallArea = (room: RoomData): number => {
     if (!room.length || !room.height) return 0;
-    return room.length * room.height;
+    const wallArea = room.length * room.height;
+    const openings = calculateOpenings(room);
+    return Math.max(0, wallArea - openings);
   };
 
   const calculateFloorArea = (room: RoomData): number => {
@@ -291,7 +293,7 @@ export function RoomParametersTable({ onDataChange }: RoomParametersTableProps) 
       <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg text-xs">
         <h4 className="font-semibold mb-2">Автоматические расчеты:</h4>
         <ul className="space-y-1 text-gray-600 dark:text-gray-400">
-          <li>• <strong>Площадь стен:</strong> Периметр × Высота</li>
+          <li>• <strong>Площадь стен:</strong> Периметр × Высота - Проемы</li>
           <li>• <strong>Площадь пола:</strong> Ручной ввод</li>
           <li>• <strong>Проемы:</strong> Окно 1 + Окно 2 + Окно 3 + Портал</li>
           <li>• <strong>Оконные/дверные откосы:</strong> 2 × (Сумма площадей всех окон)</li>
