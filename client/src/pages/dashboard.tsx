@@ -17,7 +17,7 @@ import type { ProjectWithWorkItems, WorkItem, Project } from "@shared/schema";
 
 export default function Dashboard() {
   const [currentProjectId, setCurrentProjectId] = useState<string>("");
-  const [activeTab, setActiveTab] = useState("works");
+  const [activeTab, setActiveTab] = useState("project-params");
   const [selectedWorkId, setSelectedWorkId] = useState<string | null>(null);
   const [isWorkModalOpen, setIsWorkModalOpen] = useState(false);
   const [isMaterialModalOpen, setIsMaterialModalOpen] = useState(false);
@@ -156,6 +156,7 @@ export default function Dashboard() {
             <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4">
               <div>
                 <h2 className="text-lg font-semibold">
+                  {activeTab === "project-params" && "Параметры объекта"}
                   {activeTab === "works" && "Виды работ"}
                   {activeTab === "materials" && "Материалы"}
                   {activeTab === "estimate" && "Смета"}
@@ -164,6 +165,7 @@ export default function Dashboard() {
                   {activeTab === "hierarchy-db" && "База работ"}
                 </h2>
                 <p className="text-sm text-gray-500 dark:text-gray-400">
+                  {activeTab === "project-params" && "Настройка параметров объекта строительства"}
                   {activeTab === "works" && "Управление видами работ проекта с количеством и суммами"}
                   {activeTab === "materials" && "Управление материалами проекта"}
                   {activeTab === "estimate" && "Просмотр и экспорт сметы"}
@@ -176,6 +178,68 @@ export default function Dashboard() {
 
             {/* Content */}
             <div className="flex-1 overflow-y-auto p-6">
+              {activeTab === "project-params" && (
+                <div className="max-w-2xl">
+                  <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+                    <h3 className="text-lg font-semibold mb-4">Основные параметры объекта</h3>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium mb-2">Название объекта</label>
+                        <input 
+                          type="text" 
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700"
+                          placeholder="Введите название объекта"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-2">Адрес объекта</label>
+                        <input 
+                          type="text" 
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700"
+                          placeholder="Введите адрес объекта"
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium mb-2">Общая площадь (м²)</label>
+                          <input 
+                            type="number" 
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700"
+                            placeholder="0"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium mb-2">Количество этажей</label>
+                          <input 
+                            type="number" 
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700"
+                            placeholder="1"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-2">Тип объекта</label>
+                        <select className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700">
+                          <option value="">Выберите тип объекта</option>
+                          <option value="residential">Жилой дом</option>
+                          <option value="commercial">Коммерческое здание</option>
+                          <option value="industrial">Промышленное здание</option>
+                          <option value="other">Другое</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-2">Примечания</label>
+                        <textarea 
+                          rows={3}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700"
+                          placeholder="Дополнительная информация об объекте"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {activeTab === "works" && (
                 !currentProject ? (
                   <div className="flex items-center justify-center h-full">

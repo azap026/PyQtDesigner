@@ -9,7 +9,8 @@ import {
   BarChart3,
   FileText,
   FileSpreadsheet,
-  DollarSign
+  DollarSign,
+  Settings
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -24,6 +25,7 @@ interface SidebarProps {
 }
 
 const navigationItems = [
+  { id: "project-params", label: "Параметры объекта", icon: Settings },
   { id: "works", label: "Виды работ", icon: Hammer },
   { id: "materials", label: "Материалы", icon: Package },
   { id: "estimate", label: "Смета", icon: Calculator },
