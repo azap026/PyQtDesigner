@@ -250,10 +250,12 @@ export default function Dashboard() {
                               />
                             </div>
                             <div>
-                              <label className="block text-sm font-medium mb-2">Срок выполнения</label>
+                              <label className="block text-sm font-medium mb-2">Срок выполнения (рабочих дней)</label>
                               <input 
-                                type="date" 
+                                type="number" 
+                                min="1"
                                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700"
+                                placeholder="30"
                               />
                             </div>
                           </div>
