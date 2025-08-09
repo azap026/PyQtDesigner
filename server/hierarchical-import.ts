@@ -177,7 +177,13 @@ export function parseHierarchicalExcel(buffer: Buffer): ParsedRecord[] {
     let index = row[1]?.toString()?.trim(); // Столбец B (шифр)
     const title = row[2]?.toString()?.trim();  // Столбец C (наименование)  
     const unit = row[3]?.toString()?.trim() || '';   // Столбец D (единица измерения)
-    const costPrice = row[4]?.toString()?.trim() || ''; // Столбец E (себестоимость)
+    let costPrice = row[4]?.toString()?.trim() || ''; // Столбец E (себестоимость)
+    
+    // Исправляем русскую локализацию чисел: заменяем запятую на точку
+    if (costPrice && costPrice.includes(',')) {
+      costPrice = costPrice.replace(',', '.');
+      console.log(`Исправили число: "${row[4]}" -> "${costPrice}"`);
+    }
     
     // Исправляем Excel Date Serial Numbers для разделов  
     if (index === '36892') index = '1-';     // 1- преобразуется в 36892
@@ -249,8 +255,20 @@ export async function importHierarchicalStructure(buffer: Buffer): Promise<Impor
       if (parentIndex) {
         parentId = sectionMap.get(parentIndex) || null;
         if (!parentId) {
-          errors.push(`Строка ${record.orderNum + 2}: не найден родительский раздел для "${record.index}"`);
-          continue;
+          // Если родительский раздел не найден, создаем его автоматически
+          console.log(`Автосоздание родительского раздела "${parentIndex}" для "${record.index}"`);
+          const autoSectionData = {
+            index: parentIndex,
+            displayIndex: parentIndex + '-',
+            title: `Раздел ${parentIndex}`,
+            parentId: null,
+            orderNum: record.orderNum - 0.5
+          };
+          
+          const autoCreatedSection = await storage.createSection(autoSectionData as InsertSection);
+          sectionMap.set(parentIndex, autoCreatedSection.id);
+          parentId = autoCreatedSection.id;
+          sectionsCreated++;
         }
       }
       
@@ -291,13 +309,14 @@ export async function importHierarchicalStructure(buffer: Buffer): Promise<Impor
         
         // Для работ обязательны единица измерения и себестоимость
         if (!record.unit || record.unit === "") {
-          errors.push(`Строка ${record.orderNum + 2}: отсутствует единица измерения для работы "${record.index}"`);
+          // Если единица измерения отсутствует, возможно это подраздел, а не работа
+          console.log(`Пропускаем работу без единицы измерения: "${record.index}" - возможно это подраздел`);
           continue;
         }
         
         // Проверяем наличие себестоимости
         if (!record.costPrice || record.costPrice === "") {
-          errors.push(`Строка ${record.orderNum + 2}: отсутствует себестоимость для работы "${record.index}"`);
+          console.log(`Пропускаем работу без себестоимости: "${record.index}"`);
           continue;
         }
         
