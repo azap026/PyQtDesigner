@@ -146,6 +146,33 @@ export function WorksEstimate({ projectId }: WorksEstimateProps) {
     enabled: !!materialSearchTerm && materialSearchTerm.length >= 2,
   });
 
+  // Поиск материала в базе данных по названию для получения изображения
+  const { data: allMaterials = [] } = useQuery({
+    queryKey: ['materials'],
+    queryFn: async () => {
+      const response = await fetch('/api/materials');
+      return response.json();
+    },
+  });
+
+  // Функция поиска изображения материала
+  const findMaterialImage = (materialName: string) => {
+    // Ищем точное совпадение
+    let foundMaterial = allMaterials.find((m: any) => 
+      m.name.toLowerCase() === materialName.toLowerCase()
+    );
+    
+    // Если точного совпадения нет, ищем по частичному совпадению
+    if (!foundMaterial) {
+      foundMaterial = allMaterials.find((m: any) => 
+        m.name.toLowerCase().includes(materialName.toLowerCase()) ||
+        materialName.toLowerCase().includes(m.name.toLowerCase())
+      );
+    }
+    
+    return foundMaterial?.imageUrl || null;
+  };
+
   // Управление раскрытием разделов
   const toggleSection = (sectionId: number) => {
     const newExpanded = new Set(expandedSections);
@@ -530,9 +557,7 @@ export function WorksEstimate({ projectId }: WorksEstimateProps) {
                                 </div>
                               </TableCell>
                               <TableCell className="text-center">
-                                <div className="w-8 h-8 bg-gray-100 dark:bg-gray-800 rounded border flex items-center justify-center text-xs text-gray-500">
-                                  IMG
-                                </div>
+                                {/* Пустая колонка для работ */}
                               </TableCell>
                               <TableCell className="text-center">{work.unit}</TableCell>
                               <TableCell className="text-center">
@@ -630,7 +655,25 @@ export function WorksEstimate({ projectId }: WorksEstimateProps) {
                                       </div>
                                     )}
                                   </TableCell>
-                                  <TableCell className="text-center text-gray-500">—</TableCell>
+                                  <TableCell className="text-center">
+                                    {(() => {
+                                      const imageUrl = findMaterialImage(material.name);
+                                      return imageUrl ? (
+                                        <img 
+                                          src={imageUrl} 
+                                          alt={material.name}
+                                          className="w-12 h-12 object-cover rounded border mx-auto"
+                                          onError={(e) => {
+                                            e.currentTarget.style.display = 'none';
+                                          }}
+                                        />
+                                      ) : (
+                                        <div className="w-12 h-12 bg-gray-100 dark:bg-gray-800 rounded border flex items-center justify-center text-xs text-gray-500 mx-auto">
+                                          Нет фото
+                                        </div>
+                                      );
+                                    })()}
+                                  </TableCell>
                                   <TableCell className="text-center text-gray-500">—</TableCell>
                                   <TableCell className="text-center font-mono text-gray-600">
                                     {material.quantity.toFixed(3)}
