@@ -356,7 +356,15 @@ export function HierarchyDatabase() {
             <CardTitle className="text-sm font-medium">Всего разделов</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{hierarchy?.totalSections || 0}</div>
+            <div className="text-2xl font-bold text-blue-600">{hierarchy?.sections?.filter(s => !s.parentId)?.length || 0}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Всего подразделов</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">{hierarchy?.sections?.filter(s => s.parentId)?.length || 0}</div>
           </CardContent>
         </Card>
         <Card>
@@ -364,17 +372,10 @@ export function HierarchyDatabase() {
             <CardTitle className="text-sm font-medium">Всего работ</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{hierarchy?.totalTasks || 0}</div>
+            <div className="text-2xl font-bold text-purple-600">{hierarchy?.tasks?.length || 0}</div>
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Корневых разделов</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{hierarchy?.sections?.length || 0}</div>
-          </CardContent>
-        </Card>
+
       </div>
 
       {/* Управление данными */}
