@@ -34,7 +34,7 @@ export function MaterialPrices() {
 
   const updatePriceMutation = useMutation({
     mutationFn: async ({ id, price }: { id: string; price: number }) => {
-      return apiRequest("PATCH", `/api/materials/${id}`, { price });
+      return apiRequest("PATCH", `/api/materials/${id}`, { pricePerUnit: price.toString() });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/materials"] });
@@ -118,7 +118,7 @@ export function MaterialPrices() {
     material.unit.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleEditPrice = (materialId: string, currentPrice: number) => {
+  const handleEditPrice = (materialId: string, currentPrice: string | number) => {
     setEditingMaterial(materialId);
     setEditPrice(currentPrice?.toString() || "");
   };
@@ -183,7 +183,7 @@ export function MaterialPrices() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">
-              {materials.filter(m => m.price && m.price > 0).length}
+              {materials.filter(m => m.pricePerUnit && parseFloat(m.pricePerUnit) > 0).length}
             </div>
           </CardContent>
         </Card>
@@ -193,7 +193,7 @@ export function MaterialPrices() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-red-600">
-              {materials.filter(m => !m.price || m.price <= 0).length}
+              {materials.filter(m => !m.pricePerUnit || parseFloat(m.pricePerUnit) <= 0).length}
             </div>
           </CardContent>
         </Card>
@@ -331,9 +331,9 @@ export function MaterialPrices() {
                         ) : (
                           <div className="flex items-center space-x-2">
                             <span className="font-medium">
-                              {material.price ? `${material.price} ₽` : "Не указана"}
+                              {material.pricePerUnit ? `${material.pricePerUnit} ₽` : "Не указана"}
                             </span>
-                            {!material.price && (
+                            {!material.pricePerUnit && (
                               <Badge variant="secondary" className="text-xs">
                                 Без цены
                               </Badge>
@@ -375,10 +375,10 @@ export function MaterialPrices() {
                         <Badge variant="outline">{material.unit}</Badge>
                       </TableCell>
                       <TableCell className="text-center">
-                        {material.consumption || "—"}
+                        {material.consumptionRate || "—"}
                       </TableCell>
                       <TableCell className="text-center">
-                        {material.weight ? `${material.weight} кг` : "—"}
+                        {material.weightPerUnit ? `${material.weightPerUnit} кг` : "—"}
                       </TableCell>
                       <TableCell>
                         {editingMaterial === material.id ? (
@@ -406,7 +406,7 @@ export function MaterialPrices() {
                             size="sm"
                             variant="ghost"
                             className="h-8 w-8 p-0"
-                            onClick={() => handleEditPrice(material.id, material.price || 0)}
+                            onClick={() => handleEditPrice(material.id, material.pricePerUnit || "0")}
                           >
                             <Edit2 className="h-4 w-4 text-gray-400 hover:text-blue-600" />
                           </Button>

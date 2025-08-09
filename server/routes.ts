@@ -306,16 +306,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Обновленная структура согласно файлу "Цены парсер"
           const materialData = {
             name: row[1]?.toString() || "", // Наименование (колонка B)
-            price: parseFloat(cleanPrice(row[2])) || 0, // Цена (колонка C)
+            unit: row[5]?.toString() || "шт", // Единица измерения (колонка F)
+            pricePerUnit: cleanPrice(row[2]), // Цена (колонка C) - как строка для схемы
             imageUrl: row[3]?.toString() || null, // Ссылка на картинку (колонка D)
             productUrl: row[4]?.toString() || null, // Ссылка на товар (колонка E)
-            unit: row[5]?.toString() || "шт", // Единица измерения (колонка F)
-            consumption: parseFloat(cleanPrice(row[6])) || null, // Норма расхода (колонка G)
-            weight: parseFloat(cleanPrice(row[7])) || null, // Вес на единицу (колонка H)
+            consumptionRate: cleanPrice(row[6]) || null, // Норма расхода (колонка G)
+            consumptionUnit: "кв.м", // По умолчанию
+            weightPerUnit: cleanPrice(row[7]) || null, // Вес на единицу (колонка H)
+            weightUnit: "кг", // По умолчанию
+            supplier: null,
+            notes: null,
           };
 
           // Validate required fields
-          if (!materialData.name || !materialData.unit || !materialData.price) {
+          if (!materialData.name || !materialData.unit || !materialData.pricePerUnit) {
             errors.push(`Строка ${i + 2}: отсутствуют обязательные поля (название, единица измерения, цена)`);
             continue;
           }
