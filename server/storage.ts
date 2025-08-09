@@ -237,8 +237,8 @@ export class DatabaseStorage implements IStorage {
     return section;
   }
 
-  async createSection(insertSection: InsertSection): Promise<Section[]> {
-    const section = await db
+  async createSection(insertSection: InsertSection): Promise<Section> {
+    const [section] = await db
       .insert(sections)
       .values({ ...insertSection, updatedAt: new Date() })
       .returning();

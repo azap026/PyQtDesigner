@@ -721,6 +721,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update task cost price
+  app.patch("/api/hierarchy/tasks/:id", async (req, res) => {
+    try {
+      const { costPrice } = req.body;
+      
+      if (costPrice === undefined || costPrice === null) {
+        return res.status(400).json({ error: "costPrice is required" });
+      }
+
+      const task = await storage.updateTask(req.params.id, { costPrice });
+      res.json(task);
+    } catch (error) {
+      console.error("Error updating task:", error);
+      res.status(500).json({ error: "Failed to update task" });
+    }
+  });
+
   // Download hierarchical template
   app.get("/api/hierarchy/template", (req, res) => {
     try {

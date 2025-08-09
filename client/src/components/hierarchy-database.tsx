@@ -14,12 +14,17 @@ import {
   Search, 
   TreePine,
   Folder,
-  FileText
+  FileText,
+  Edit2,
+  Check,
+  X
 } from "lucide-react";
 import type { HierarchicalWorkStructure } from "@shared/schema";
 
 export function HierarchyDatabase() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [editingTask, setEditingTask] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -91,6 +96,41 @@ export function HierarchyDatabase() {
     },
   });
 
+  const updateTaskMutation = useMutation({
+    mutationFn: async ({ taskId, costPrice }: { taskId: string; costPrice: string }) => {
+      const response = await fetch(`/api/hierarchy/tasks/${taskId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ costPrice }),
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/hierarchy"] });
+      setEditingTask(null);
+      setEditValue("");
+      toast({
+        title: "Обновлено",
+        description: "Себестоимость успешно обновлена",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Ошибка",
+        description: "Не удалось обновить себестоимость",
+        variant: "destructive",
+      });
+      console.error("Update error:", error);
+    },
+  });
+
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
@@ -109,6 +149,28 @@ export function HierarchyDatabase() {
     if (window.confirm("Вы уверены, что хотите очистить всю иерархическую структуру? Это действие нельзя отменить.")) {
       clearMutation.mutate();
     }
+  };
+
+  const handleEditTask = (taskId: string, currentPrice: string) => {
+    setEditingTask(taskId);
+    setEditValue(currentPrice);
+  };
+
+  const handleSaveTask = (taskId: string) => {
+    if (editValue.trim() === "") {
+      toast({
+        title: "Ошибка",
+        description: "Себестоимость не может быть пустой",
+        variant: "destructive",
+      });
+      return;
+    }
+    updateTaskMutation.mutate({ taskId, costPrice: editValue });
+  };
+
+  const handleCancelEdit = () => {
+    setEditingTask(null);
+    setEditValue("");
   };
 
   const renderSection = (section: any, level: number = 0) => {
@@ -143,9 +205,50 @@ export function HierarchyDatabase() {
             <span className="text-sm flex-1">{task.title}</span>
             <div className="flex items-center space-x-2 text-xs text-gray-500">
               <Badge variant="outline">{task.unit}</Badge>
-              <span className="font-medium">
-                {task.costPrice ? `${task.costPrice} ₽` : "Не указана"}
-              </span>
+              {editingTask === task.id ? (
+                <div className="flex items-center space-x-1">
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={editValue}
+                    onChange={(e) => setEditValue(e.target.value)}
+                    className="w-20 h-6 text-xs"
+                    placeholder="0.00"
+                  />
+                  <span className="text-xs">₽</span>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-6 w-6 p-0"
+                    onClick={() => handleSaveTask(task.id)}
+                    disabled={updateTaskMutation.isPending}
+                  >
+                    <Check className="h-3 w-3 text-green-600" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-6 w-6 p-0"
+                    onClick={handleCancelEdit}
+                  >
+                    <X className="h-3 w-3 text-red-600" />
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex items-center space-x-1">
+                  <span className="font-medium">
+                    {task.costPrice ? `${task.costPrice} ₽` : "Не указана"}
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-6 w-6 p-0"
+                    onClick={() => handleEditTask(task.id, task.costPrice || "")}
+                  >
+                    <Edit2 className="h-3 w-3 text-gray-400 hover:text-blue-600" />
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
         ))}
