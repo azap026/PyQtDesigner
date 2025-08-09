@@ -353,7 +353,7 @@ export function AreaWorkLinking({ roomsData, onAreaLinkingChange }: AreaWorkLink
 
       {/* Диалог настройки */}
       <Dialog open={isConfigDialogOpen} onOpenChange={setIsConfigDialogOpen}>
-        <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[500px] max-h-[80vh]">
           <DialogHeader>
             <DialogTitle>Настройка привязки площадей</DialogTitle>
             <DialogDescription>
@@ -362,7 +362,7 @@ export function AreaWorkLinking({ roomsData, onAreaLinkingChange }: AreaWorkLink
           </DialogHeader>
           
           {selectedTask && (
-            <div className="space-y-4 pb-4">
+            <div className="space-y-4 max-h-[50vh] overflow-y-auto py-4">
               <div>
                 <Label className="text-sm font-medium text-gray-700">Работа</Label>
                 <div className="mt-1 p-2 bg-gray-50 rounded text-sm">
@@ -441,8 +441,7 @@ export function AreaWorkLinking({ roomsData, onAreaLinkingChange }: AreaWorkLink
                 )}
               </div>
               
-              <Separator />
-              
+            <div className="border-t pt-4 mt-4">
               <div className="flex justify-end gap-2">
                 <Button
                   variant="outline"
@@ -458,6 +457,7 @@ export function AreaWorkLinking({ roomsData, onAreaLinkingChange }: AreaWorkLink
                   Сохранить
                 </Button>
               </div>
+            </div>
             </div>
           )}
         </DialogContent>
