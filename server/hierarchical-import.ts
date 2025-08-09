@@ -277,7 +277,7 @@ export async function importHierarchicalStructure(buffer: Buffer): Promise<Impor
             orderNum: record.orderNum - 0.5
           };
           
-          const autoCreatedSection = await storage.createSection(autoSectionData as InsertSection);
+          const autoCreatedSection = await storage.createSection(autoSectionData);
           sectionMap.set(parentIndex, autoCreatedSection.id);
           parentId = autoCreatedSection.id;
           sectionsCreated++;
@@ -292,7 +292,7 @@ export async function importHierarchicalStructure(buffer: Buffer): Promise<Impor
         orderNum: record.orderNum
       };
       
-      const createdSection = await storage.createSection(sectionData as InsertSection);
+      const createdSection = await storage.createSection(sectionData);
       sectionMap.set(cleanIndex, createdSection.id);
       sectionsCreated++;
       
@@ -326,7 +326,7 @@ export async function importHierarchicalStructure(buffer: Buffer): Promise<Impor
               orderNum: record.orderNum - 0.5 // Ставим перед текущей работой
             };
             
-            const createdSection = await storage.createSection(autoSectionData as InsertSection);
+            const createdSection = await storage.createSection(autoSectionData);
             sectionMap.set(parentIndex, createdSection.id);
             parentSectionId = createdSection.id;
             sectionsCreated++;
