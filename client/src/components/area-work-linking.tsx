@@ -189,117 +189,119 @@ export default function AreaWorkLinking({ projectAreas }: AreaWorkLinkingProps) 
 
       {/* Диалог настройки */}
       <Dialog open={isConfigDialogOpen} onOpenChange={setIsConfigDialogOpen}>
-        <DialogContent className="sm:max-w-[500px] max-h-[90vh] flex flex-col">
-          <DialogHeader className="flex-shrink-0">
-            <DialogTitle>Настройка привязки площадей</DialogTitle>
-            <DialogDescription>
-              Настройте автоматическое заполнение объема работы на основе площадей помещений
-            </DialogDescription>
-          </DialogHeader>
-          
-          {selectedTask && (
-            <div className="flex-1 flex flex-col min-h-0">
-              <div className="flex-1 overflow-y-auto space-y-4 pr-2">
-                <div>
-                <Label className="text-sm font-medium text-gray-700">Работа</Label>
-                <div className="mt-1 p-2 bg-gray-50 rounded text-sm">
-                  <div className="font-medium">{selectedTask.index} {selectedTask.title}</div>
-                  <div className="text-gray-500">{selectedTask.unit} • ₽{parseFloat(selectedTask.costPrice || "0").toFixed(2)}</div>
-                </div>
-              </div>
-              
-              <Separator />
-              
-              <div className="space-y-3">
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    checked={selectedTask.autoFillFromArea || false}
-                    onCheckedChange={(checked) => 
-                      setSelectedTask(prev => prev ? { ...prev, autoFillFromArea: checked } : null)
-                    }
-                  />
-                  <Label>Автоматически заполнять объем</Label>
-                </div>
-                
-                {selectedTask.autoFillFromArea && (
-                  <div className="space-y-3">
-                    <div>
-                      <Label>Тип площади</Label>
-                      <Select
-                        value={selectedTask.areaType || "ручной"}
-                        onValueChange={(value) => 
-                          setSelectedTask(prev => prev ? { ...prev, areaType: value as AreaType } : null)
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="пол">Пол</SelectItem>
-                          <SelectItem value="потолок">Потолок</SelectItem>
-                          <SelectItem value="стены">Стены</SelectItem>
-                          <SelectItem value="окна">Окна</SelectItem>
-                          <SelectItem value="двери">Двери</SelectItem>
-                          <SelectItem value="ручной">Ручной ввод</SelectItem>
-                        </SelectContent>
-                      </Select>
+        <DialogContent className="sm:max-w-[500px] max-h-[80vh] overflow-hidden p-0">
+          <div className="flex flex-col h-full">
+            <DialogHeader className="px-6 py-4 border-b flex-shrink-0">
+              <DialogTitle>Настройка привязки площадей</DialogTitle>
+              <DialogDescription>
+                Настройте автоматическое заполнение объема работы на основе площадей помещений
+              </DialogDescription>
+            </DialogHeader>
+            
+            {selectedTask && (
+              <>
+                <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+                  <div>
+                    <Label className="text-sm font-medium text-gray-700">Работа</Label>
+                    <div className="mt-1 p-2 bg-gray-50 rounded text-sm">
+                      <div className="font-medium">{selectedTask.index} {selectedTask.title}</div>
+                      <div className="text-gray-500">{selectedTask.unit} • ₽{parseFloat(selectedTask.costPrice || "0").toFixed(2)}</div>
                     </div>
-                    
-                    <div>
-                      <Label>Коэффициент (множитель)</Label>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        value={selectedTask.areaMultiplier || 1.0}
-                        onChange={(e) => 
-                          setSelectedTask(prev => prev ? { 
-                            ...prev, 
-                            areaMultiplier: parseFloat(e.target.value) || 1.0 
-                          } : null)
+                  </div>
+                  
+                  <Separator />
+                  
+                  <div className="space-y-3">
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        checked={selectedTask.autoFillFromArea || false}
+                        onCheckedChange={(checked) => 
+                          setSelectedTask(prev => prev ? { ...prev, autoFillFromArea: checked } : null)
                         }
                       />
-                      <div className="text-xs text-gray-500 mt-1">
-                        Для учета запаса материала или особенностей работы
-                      </div>
+                      <Label>Автоматически заполнять объем</Label>
                     </div>
                     
-                    {projectAreas && selectedTask.areaType && selectedTask.areaType !== "ручной" && (
-                      <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded">
-                        <div className="text-sm text-blue-700 dark:text-blue-300">
-                          <div>Базовая площадь: {formatArea(getAreaByType(projectAreas, selectedTask.areaType))}</div>
-                          <div className="font-medium">
-                            Итоговый объем: {formatArea(getAreaByType(projectAreas, selectedTask.areaType) * (selectedTask.areaMultiplier || 1.0), selectedTask.unit)}
+                    {selectedTask.autoFillFromArea && (
+                      <div className="space-y-3">
+                        <div>
+                          <Label>Тип площади</Label>
+                          <Select
+                            value={selectedTask.areaType || "ручной"}
+                            onValueChange={(value) => 
+                              setSelectedTask(prev => prev ? { ...prev, areaType: value as AreaType } : null)
+                            }
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="пол">Пол</SelectItem>
+                              <SelectItem value="потолок">Потолок</SelectItem>
+                              <SelectItem value="стены">Стены</SelectItem>
+                              <SelectItem value="окна">Окна</SelectItem>
+                              <SelectItem value="двери">Двери</SelectItem>
+                              <SelectItem value="ручной">Ручной ввод</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        
+                        <div>
+                          <Label>Коэффициент (множитель)</Label>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={selectedTask.areaMultiplier || 1.0}
+                            onChange={(e) => 
+                              setSelectedTask(prev => prev ? { 
+                                ...prev, 
+                                areaMultiplier: parseFloat(e.target.value) || 1.0 
+                              } : null)
+                            }
+                          />
+                          <div className="text-xs text-gray-500 mt-1">
+                            Для учета запаса материала или особенностей работы
                           </div>
                         </div>
+                        
+                        {projectAreas && selectedTask.areaType && selectedTask.areaType !== "ручной" && (
+                          <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded">
+                            <div className="text-sm text-blue-700 dark:text-blue-300">
+                              <div>Базовая площадь: {formatArea(getAreaByType(projectAreas, selectedTask.areaType))}</div>
+                              <div className="font-medium">
+                                Итоговый объем: {formatArea(getAreaByType(projectAreas, selectedTask.areaType) * (selectedTask.areaMultiplier || 1.0), selectedTask.unit)}
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
-                )}
                 </div>
-              </div>
-              
-              {/* Кнопки всегда видны внизу */}
-              <div className="flex-shrink-0 border-t pt-4 mt-4">
-                <div className="flex justify-end gap-2">
-                  <Button
-                    variant="outline"
-                    onClick={() => setIsConfigDialogOpen(false)}
-                  >
-                    Отмена
-                  </Button>
-                  <Button 
-                    onClick={handleSaveConfig}
-                    disabled={saveConfigMutation.isPending}
-                    className="bg-primary hover:bg-primary/90 text-white"
-                  >
-                    <Save className="h-4 w-4 mr-2" />
-                    {saveConfigMutation.isPending ? "Сохранение..." : "Сохранить"}
-                  </Button>
+                
+                {/* Кнопки всегда видны внизу */}
+                <div className="border-t px-6 py-4 flex-shrink-0">
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => setIsConfigDialogOpen(false)}
+                    >
+                      Отмена
+                    </Button>
+                    <Button 
+                      onClick={handleSaveConfig}
+                      disabled={saveConfigMutation.isPending}
+                      className="bg-primary hover:bg-primary/90 text-white"
+                    >
+                      <Save className="h-4 w-4 mr-2" />
+                      {saveConfigMutation.isPending ? "Сохранение..." : "Сохранить"}
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            </div>
-          )}
+              </>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </div>
