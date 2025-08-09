@@ -296,10 +296,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const cleanPrice = (value: any): string => {
             if (!value) return "0";
             let priceStr = value.toString().trim();
+            
+            // Проверяем на текстовые значения ошибок
+            if (priceStr.toLowerCase().includes('ненайдена') || 
+                priceStr.toLowerCase().includes('ошибка') ||
+                priceStr.toLowerCase().includes('error') ||
+                priceStr === '-' || priceStr === '') {
+              return "0";
+            }
+            
             // Удаляем пробелы из чисел (русский формат тысяч)
             priceStr = priceStr.replace(/\s+/g, '');
             // Заменяем запятую на точку (русский десятичный разделитель)
             priceStr = priceStr.replace(',', '.');
+            
+            // Проверяем, что результат - валидное число
+            const numValue = parseFloat(priceStr);
+            if (isNaN(numValue)) {
+              return "0";
+            }
+            
             return priceStr;
           };
 
