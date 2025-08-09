@@ -231,11 +231,20 @@ export function WorksEstimate({ projectId }: WorksEstimateProps) {
       if (section) {
         const work = section.works.find((w: any) => w.index === editingMaterial.workIndex);
         if (work && work.materials[editingMaterial.materialIndex]) {
+          const newPrice = parseFloat(material.pricePerUnit) || 0;
+          console.log('Обновление материала:', {
+            materialName: material.name,
+            originalPrice: material.pricePerUnit,
+            parsedPrice: newPrice,
+            unit: material.unit
+          });
+          
           work.materials[editingMaterial.materialIndex] = {
             ...work.materials[editingMaterial.materialIndex],
             name: material.name,
             unit: material.unit,
-            unitPrice: parseFloat(material.pricePerUnit) || 0
+            unitPrice: newPrice,
+            costPrice: newPrice // Обновляем оба поля для совместимости
           };
         }
       }
@@ -247,7 +256,7 @@ export function WorksEstimate({ projectId }: WorksEstimateProps) {
       
       toast({
         title: "Материал обновлен",
-        description: `Материал заменен на "${material.name}"`,
+        description: `Материал заменен на "${material.name}" по цене ₽${parseFloat(material.pricePerUnit).toFixed(2)}`,
       });
     }
   };
@@ -533,10 +542,10 @@ export function WorksEstimate({ projectId }: WorksEstimateProps) {
                                   </TableCell>
                                   <TableCell className="text-center text-gray-500">—</TableCell>
                                   <TableCell className="text-center font-mono text-gray-600">
-                                    ₽ {material.unitPrice.toFixed(2)}
+                                    ₽ {(material.unitPrice || material.costPrice || 0).toFixed(2)}
                                   </TableCell>
                                   <TableCell className="text-center font-mono text-gray-600">
-                                    ₽ {(material.quantity * material.unitPrice).toFixed(2)}
+                                    ₽ {(material.quantity * (material.unitPrice || material.costPrice || 0)).toFixed(2)}
                                   </TableCell>
                                   <TableCell>
                                     {!isEditing && (
