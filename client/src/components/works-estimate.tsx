@@ -464,7 +464,7 @@ export function WorksEstimate({ projectId }: WorksEstimateProps) {
                       
                       {/* Работы в разделе */}
                       {expandedSections.has(section.id) && section.works.map((work) => {
-                        const workTotal = work.quantity * work.unitPrice;
+                        const workTotal = work.quantity * (work.unitPrice || work.costPrice || 0);
                         
                         return (
                           <React.Fragment key={`work-${section.id}-${work.index}`}>
@@ -626,7 +626,7 @@ export function WorksEstimate({ projectId }: WorksEstimateProps) {
                             Итого по разделу "{section.title}":
                           </TableCell>
                           <TableCell className="text-center font-mono font-bold">
-                            ₽ {section.works.reduce((total, work) => total + (work.quantity * work.unitPrice), 0).toLocaleString('ru-RU', { minimumFractionDigits: 2 })}
+                            ₽ {section.works.reduce((total, work) => total + (work.quantity * (work.unitPrice || work.costPrice || 0)), 0).toLocaleString('ru-RU', { minimumFractionDigits: 2 })}
                           </TableCell>
                           <TableCell></TableCell>
                         </TableRow>
