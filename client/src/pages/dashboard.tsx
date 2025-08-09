@@ -11,7 +11,7 @@ import { MaterialModal } from "@/components/material-modal";
 import { MaterialPrices } from "@/components/material-prices";
 import { HierarchyDatabase } from "@/components/hierarchy-database";
 import { DetailedEstimate } from "@/components/detailed-estimate";
-import { ProjectWorksDatabase } from "@/components/project-works-database";
+import { WorksEstimate } from "@/components/works-estimate";
 import { useToast } from "@/hooks/use-toast";
 import type { ProjectWithWorkItems, WorkItem, Project } from "@shared/schema";
 
@@ -185,7 +185,7 @@ export default function Dashboard() {
                     </div>
                   </div>
                 ) : (
-                  <ProjectWorksDatabase projectId={currentProjectId} />
+                  <WorksEstimate projectId={currentProjectId} />
                 )
               )}
 
