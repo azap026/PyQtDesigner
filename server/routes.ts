@@ -817,6 +817,17 @@ app.get("/api/hierarchy", async (req, res) => {
     }
   });
 
+  // Get all tasks for area linking
+  app.get("/api/hierarchy/tasks", async (req, res) => {
+    try {
+      const tasks = await storage.getTasks();
+      res.json(tasks);
+    } catch (error) {
+      console.error("Error getting tasks for area linking:", error);
+      res.status(500).json({ error: "Failed to get tasks" });
+    }
+  });
+
   // Update task area configuration
   app.patch("/api/hierarchy/tasks/:id/area-config", async (req, res) => {
     try {
@@ -1049,6 +1060,54 @@ app.get("/api/hierarchy", async (req, res) => {
   });
 
   // Tasks CRUD
+  // Area configuration endpoints
+  app.get("/api/area-configs", async (req, res) => {
+    try {
+      const tasks = await storage.getTasks();
+      const configs = tasks
+        .filter(task => task.autoFillFromArea)
+        .map(task => ({
+          taskId: task.id,
+          autoFillFromArea: task.autoFillFromArea || false,
+          areaType: task.areaType || "ручной",
+          areaMultiplier: parseFloat(task.areaMultiplier || "1.0")
+        }));
+      res.json(configs);
+    } catch (error) {
+      console.error("Error getting area configs:", error);
+      res.status(500).json({ error: "Failed to get area configurations" });
+    }
+  });
+
+  app.post("/api/area-configs", async (req, res) => {
+    try {
+      const { taskId, autoFillFromArea, areaType, areaMultiplier } = req.body;
+      
+      const updateData: any = {
+        autoFillFromArea: autoFillFromArea || false
+      };
+      
+      if (autoFillFromArea) {
+        updateData.areaType = areaType || "ручной";
+        updateData.areaMultiplier = areaMultiplier?.toString() || "1.0";
+      } else {
+        updateData.areaType = null;
+        updateData.areaMultiplier = null;
+      }
+
+      const task = await storage.updateTask(taskId, updateData);
+      res.json({
+        taskId: task.id,
+        autoFillFromArea: task.autoFillFromArea || false,
+        areaType: task.areaType || "ручной",
+        areaMultiplier: parseFloat(task.areaMultiplier || "1.0")
+      });
+    } catch (error) {
+      console.error("Error saving area config:", error);
+      res.status(500).json({ error: "Failed to save area configuration" });
+    }
+  });
+
   app.get("/api/tasks", async (req, res) => {
     try {
       const tasks = await storage.getTasks();
