@@ -265,20 +265,31 @@ export function WorksEstimate({ projectId }: WorksEstimateProps) {
   };
 
   const handleSelectMaterial = (material: any) => {
+    console.log('handleSelectMaterial вызван:', { material, editingMaterial });
+    
     if (editingMaterial) {
       saveToHistory(`Замена материала на "${material.name}"`);
       
       const newData = JSON.parse(JSON.stringify(currentData));
       const section = newData.sections.find((s: any) => s.id === editingMaterial.sectionId);
+      
+      console.log('Найденная секция:', section);
+      
       if (section) {
         const work = section.works.find((w: any) => w.index === editingMaterial.workIndex);
+        console.log('Найденная работа:', work);
+        
         if (work && work.materials[editingMaterial.materialIndex]) {
           const newPrice = parseFloat(material.pricePerUnit) || 0;
+          
           console.log('Обновление материала:', {
+            oldMaterial: work.materials[editingMaterial.materialIndex],
+            newMaterial: material,
             materialName: material.name,
             originalPrice: material.pricePerUnit,
             parsedPrice: newPrice,
-            unit: material.unit
+            unit: material.unit,
+            editingMaterial
           });
           
           work.materials[editingMaterial.materialIndex] = {
@@ -288,6 +299,8 @@ export function WorksEstimate({ projectId }: WorksEstimateProps) {
             unitPrice: newPrice,
             costPrice: newPrice // Обновляем оба поля для совместимости
           };
+          
+          console.log('Материал после обновления:', work.materials[editingMaterial.materialIndex]);
         }
       }
       
