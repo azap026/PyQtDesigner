@@ -817,6 +817,28 @@ app.get("/api/hierarchy", async (req, res) => {
     }
   });
 
+  // Update task area configuration
+  app.patch("/api/hierarchy/tasks/:id/area-config", async (req, res) => {
+    try {
+      const { areaType, autoFillFromArea, areaMultiplier } = req.body;
+      
+      const updateData: any = {};
+      if (areaType !== undefined) updateData.areaType = areaType;
+      if (autoFillFromArea !== undefined) updateData.autoFillFromArea = autoFillFromArea;
+      if (areaMultiplier !== undefined) updateData.areaMultiplier = areaMultiplier.toString();
+      
+      if (Object.keys(updateData).length === 0) {
+        return res.status(400).json({ error: "No area configuration data provided" });
+      }
+
+      const task = await storage.updateTask(req.params.id, updateData);
+      res.json(task);
+    } catch (error) {
+      console.error("Error updating task area config:", error);
+      res.status(500).json({ error: "Failed to update task area configuration" });
+    }
+  });
+
   // Download hierarchical template
   app.get("/api/hierarchy/template", (req, res) => {
     try {

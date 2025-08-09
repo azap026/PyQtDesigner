@@ -11,7 +11,8 @@ import {
   FileSpreadsheet,
   DollarSign,
   Settings,
-  Undo
+  Undo,
+  Link2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useUndoRedoContext } from "@/contexts/UndoRedoContext";
@@ -37,6 +38,7 @@ const navigationItems = [
 const settingsItems = [
   { id: "material-prices", label: "Цены на материалы", icon: DollarSign },
   { id: "hierarchy-db", label: "База работ", icon: Hammer },
+  { id: "area-linking", label: "Привязка площадей", icon: Link2 },
 ];
 
 export function Sidebar({

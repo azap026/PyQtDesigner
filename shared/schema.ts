@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, decimal, integer, timestamp, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, decimal, integer, timestamp, jsonb, boolean } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -41,6 +41,11 @@ export const workItems = pgTable("work_items", {
   workCode: text("work_code"), // Код работы для связи с иерархической структурой (например: 2.9, 2.10)
   sectionName: text("section_name"), // Название раздела работ
   hierarchyTaskId: varchar("hierarchy_task_id"), // Связь с таблицей tasks из иерархии
+  // Новые поля для автоматической привязки площадей
+  areaType: text("area_type"), // пол, потолок, стены, окна, двери, ручной
+  autoFillFromArea: boolean("auto_fill_from_area").default(false), // автоматически заполнять объем из площадей
+  areaMultiplier: decimal("area_multiplier", { precision: 10, scale: 3 }).default("1.0"), // коэффициент для расчета
+  roomFilter: jsonb("room_filter"), // фильтр комнат для применения (null = все комнаты)
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
@@ -155,6 +160,10 @@ export const tasks = pgTable("tasks", {
   costPrice: decimal("cost_price", { precision: 10, scale: 2 }).notNull(), // себестоимость за единицу (основное поле)
   parentSectionId: varchar("parent_section_id").notNull().references(() => sections.id, { onDelete: "cascade" }),
   orderNum: integer("order_num").notNull(),
+  // Новые поля для привязки к площадям
+  areaType: text("area_type"), // пол, потолок, стены, окна, двери, ручной
+  autoFillFromArea: boolean("auto_fill_from_area").default(false), // автоматически заполнять объем из площадей
+  areaMultiplier: decimal("area_multiplier", { precision: 10, scale: 3 }).default("1.0"), // коэффициент для расчета (например, 1.05 для запаса)
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
@@ -221,3 +230,25 @@ export type HierarchicalWorkStructure = {
   totalSections: number;
   totalTasks: number;
 };
+
+// Types for area-to-work linking system
+export type AreaType = "пол" | "потолок" | "стены" | "окна" | "двери" | "ручной";
+
+export interface RoomAreas {
+  floorArea: number;
+  ceilingArea: number;
+  wallArea: number;
+  windowArea: number;
+  doorArea: number;
+  perimeter: number;
+}
+
+export interface ProjectAreas {
+  totalFloorArea: number;
+  totalCeilingArea: number;
+  totalWallArea: number;
+  totalWindowArea: number;
+  totalDoorArea: number;
+  totalPerimeter: number;
+  roomsData: RoomAreas[];
+}

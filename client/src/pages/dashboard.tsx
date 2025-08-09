@@ -14,6 +14,7 @@ import { DetailedEstimate } from "@/components/detailed-estimate";
 import { WorksEstimate } from "@/components/works-estimate";
 import { RoomParametersTable } from "@/components/room-parameters-table";
 import { SummaryTable } from "@/components/summary-table";
+import { AreaWorkLinking } from "@/components/area-work-linking";
 import { useToast } from "@/hooks/use-toast";
 import type { ProjectWithWorkItems, WorkItem, Project } from "@shared/schema";
 
@@ -200,6 +201,7 @@ export default function Dashboard() {
                   {activeTab === "reports" && "Отчеты"}
                   {activeTab === "material-prices" && "Цены на материалы"}
                   {activeTab === "hierarchy-db" && "База работ"}
+                  {activeTab === "area-linking" && "Привязка площадей к работам"}
                 </h2>
                 <p className="text-sm text-gray-500 dark:text-gray-400">
                   {activeTab === "project-params" && "Настройка параметров объекта строительства"}
@@ -209,6 +211,7 @@ export default function Dashboard() {
                   {activeTab === "reports" && "Отчёты и аналитика"}
                   {activeTab === "material-prices" && "Управление ценами материалов и ссылками"}
                   {activeTab === "hierarchy-db" && "Управление иерархической структурой работ"}
+                  {activeTab === "area-linking" && "Автоматическое заполнение объемов работ на основе площадей помещений"}
                 </p>
               </div>
             </div>
@@ -349,6 +352,16 @@ export default function Dashboard() {
 
               {activeTab === "hierarchy-db" && (
                 <HierarchyDatabase />
+              )}
+
+              {activeTab === "area-linking" && (
+                <AreaWorkLinking 
+                  roomsData={roomsData}
+                  onAreaLinkingChange={(taskId, config) => {
+                    // Обновление конфигурации привязки площадей
+                    console.log("Area linking updated:", taskId, config);
+                  }}
+                />
               )}
 
               {activeTab === "estimate" && (
