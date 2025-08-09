@@ -99,7 +99,7 @@ export function RoomParametersTable({ onDataChange }: RoomParametersTableProps) 
       field: "length" as keyof RoomData,
     },
     {
-      label: "Ширина вдоль окна",
+      label: "Ширина",
       bg: "bg-yellow-50 dark:bg-yellow-900/20",
       type: "input" as const,
       field: "width" as keyof RoomData,
