@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Card,
@@ -78,8 +78,28 @@ export function DetailedEstimate({ projectId }: DetailedEstimateProps) {
   const [projectTitle, setProjectTitle] = useState("Сметный расчет по объекту: г. Москва, Шмитовский проезд");
   const [estimateRows, setEstimateRows] = useState<EstimateRow[]>([]);
   const [openCombobox, setOpenCombobox] = useState<string | null>(null);
+  const [estimateWorks, setEstimateWorks] = useState<any[]>([]);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Загрузка данных из localStorage при инициализации
+  useEffect(() => {
+    const savedEstimate = JSON.parse(localStorage.getItem('projectEstimate') || '[]');
+    setEstimateWorks(savedEstimate);
+  }, []);
+
+  // Слушаем события обновления сметы
+  useEffect(() => {
+    const handleEstimateUpdate = (event: CustomEvent) => {
+      setEstimateWorks(event.detail.estimate);
+    };
+
+    window.addEventListener('estimateUpdated', handleEstimateUpdate as EventListener);
+    
+    return () => {
+      window.removeEventListener('estimateUpdated', handleEstimateUpdate as EventListener);
+    };
+  }, []);
 
   const { data: project, isLoading } = useQuery<ProjectWithWorkItems>({
     queryKey: ["/api/projects", projectId],
@@ -512,12 +532,180 @@ export function DetailedEstimate({ projectId }: DetailedEstimateProps) {
         </Card>
       </div>
 
+      {/* Работы добавленные из каталога */}
+      {estimateWorks.length > 0 && (
+        <Card className="border-green-200 dark:border-green-800">
+          <CardHeader>
+            <CardTitle className="text-green-700 dark:text-green-300">
+              Добавленные работы из каталога
+            </CardTitle>
+            <CardDescription>
+              {estimateWorks.length} работ добавлено в смету
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="border rounded-lg overflow-hidden">
+              <Table>
+                <TableHeader className="bg-green-50 dark:bg-green-950/20">
+                  <TableRow>
+                    <TableHead className="w-12">Этап</TableHead>
+                    <TableHead className="w-16">№</TableHead>
+                    <TableHead>Наименование работ</TableHead>
+                    <TableHead className="text-center w-20">Изображение</TableHead>
+                    <TableHead className="text-center w-20">Ед.изм</TableHead>
+                    <TableHead className="text-center w-20">Количество</TableHead>
+                    <TableHead className="text-center w-24">Цена за ед.</TableHead>
+                    <TableHead className="text-center w-24">Сумма</TableHead>
+                    <TableHead className="w-12">Действия</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {estimateWorks.map((work) => {
+                    const workTotal = work.quantity * (work.unitPrice || work.costPrice || 0);
+                    const materialsTotal = work.materials.reduce((total: number, material: any) => 
+                      total + (material.quantity * (material.unitPrice || material.costPrice || 0)), 0
+                    );
+                    
+                    return (
+                      <React.Fragment key={work.id}>
+                        {/* Заголовок раздела */}
+                        <TableRow className="bg-blue-50 dark:bg-blue-950/20">
+                          <TableCell colSpan={9} className="font-bold text-blue-700 dark:text-blue-300">
+                            {work.sectionTitle}
+                          </TableCell>
+                        </TableRow>
+                        
+                        {/* Работа */}
+                        <TableRow className="border-l-4 border-blue-200">
+                          <TableCell className="font-medium text-center">{work.stage}</TableCell>
+                          <TableCell className="font-medium">{work.index}</TableCell>
+                          <TableCell>
+                            <div className="font-medium">{work.title}</div>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <div className="w-8 h-8 bg-gray-100 dark:bg-gray-800 rounded border flex items-center justify-center text-xs text-gray-500">
+                              IMG
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-center">{work.unit}</TableCell>
+                          <TableCell className="text-center">
+                            <Input
+                              type="number"
+                              value={work.quantity}
+                              onChange={(e) => {
+                                const newQuantity = parseFloat(e.target.value) || 0;
+                                const updatedWorks = estimateWorks.map(w => 
+                                  w.id === work.id ? { ...w, quantity: newQuantity } : w
+                                );
+                                setEstimateWorks(updatedWorks);
+                                localStorage.setItem('projectEstimate', JSON.stringify(updatedWorks));
+                              }}
+                              className="w-20 text-center"
+                              step="0.01"
+                              min="0"
+                            />
+                          </TableCell>
+                          <TableCell className="text-center font-mono">
+                            ₽ {(work.unitPrice || work.costPrice || 0).toFixed(2)}
+                          </TableCell>
+                          <TableCell className="text-center font-mono font-bold">
+                            ₽ {workTotal.toFixed(2)}
+                          </TableCell>
+                          <TableCell>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                const updatedWorks = estimateWorks.filter(w => w.id !== work.id);
+                                setEstimateWorks(updatedWorks);
+                                localStorage.setItem('projectEstimate', JSON.stringify(updatedWorks));
+                              }}
+                              className="h-8 w-8 p-0 text-red-500 hover:text-red-700"
+                              title="Удалить из сметы"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+
+                        {/* Материалы */}
+                        {work.materials.map((material: any, materialIndex: number) => (
+                          <TableRow 
+                            key={`${work.id}-material-${materialIndex}`}
+                            className="bg-gray-50/50 dark:bg-gray-800/30 border-l-4 border-gray-300"
+                          >
+                            <TableCell className="text-center text-gray-500">{material.unit}</TableCell>
+                            <TableCell className="text-gray-500">{work.index}</TableCell>
+                            <TableCell className="pl-8 text-gray-700 dark:text-gray-300">
+                              <div className="text-sm">{material.name}</div>
+                            </TableCell>
+                            <TableCell className="text-center text-gray-500">—</TableCell>
+                            <TableCell className="text-center text-gray-500">—</TableCell>
+                            <TableCell className="text-center">
+                              <Input
+                                type="number"
+                                value={material.quantity}
+                                onChange={(e) => {
+                                  const newQuantity = parseFloat(e.target.value) || 0;
+                                  const updatedWorks = estimateWorks.map(w => {
+                                    if (w.id === work.id) {
+                                      const updatedMaterials = w.materials.map((m: any, i: number) => 
+                                        i === materialIndex ? { ...m, quantity: newQuantity } : m
+                                      );
+                                      return { ...w, materials: updatedMaterials };
+                                    }
+                                    return w;
+                                  });
+                                  setEstimateWorks(updatedWorks);
+                                  localStorage.setItem('projectEstimate', JSON.stringify(updatedWorks));
+                                }}
+                                className="w-20 text-center text-sm"
+                                step="0.001"
+                                min="0"
+                              />
+                            </TableCell>
+                            <TableCell className="text-center font-mono text-gray-600">
+                              ₽ {(material.unitPrice || material.costPrice || 0).toFixed(2)}
+                            </TableCell>
+                            <TableCell className="text-center font-mono text-gray-600">
+                              ₽ {(material.quantity * (material.unitPrice || material.costPrice || 0)).toFixed(2)}
+                            </TableCell>
+                            <TableCell></TableCell>
+                          </TableRow>
+                        ))}
+                      </React.Fragment>
+                    );
+                  })}
+                  
+                  {/* Итого по добавленным работам */}
+                  <TableRow className="bg-green-50 dark:bg-green-950/20 border-t-2 font-bold">
+                    <TableCell colSpan={7} className="text-right text-lg">
+                      Итого по добавленным работам:
+                    </TableCell>
+                    <TableCell className="text-center font-mono text-lg font-bold text-green-700 dark:text-green-300">
+                      ₽ {estimateWorks.reduce((total, work) => {
+                        const workTotal = work.quantity * (work.unitPrice || work.costPrice || 0);
+                        const materialsTotal = work.materials.reduce((matTotal: number, material: any) => 
+                          matTotal + (material.quantity * (material.unitPrice || material.costPrice || 0)), 0
+                        );
+                        return total + workTotal + materialsTotal;
+                      }, 0).toLocaleString('ru-RU', { minimumFractionDigits: 2 })}
+                    </TableCell>
+                    <TableCell></TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Детальная смета по разделам */}
       <Card>
         <CardHeader>
-          <CardTitle>Детальная смета</CardTitle>
+          <CardTitle>Детальная смета проекта</CardTitle>
           <CardDescription>
-            Расчет стоимости работ и материалов по разделам
+            Расчет стоимости работ и материалов по разделам (из базы данных проекта)
           </CardDescription>
         </CardHeader>
         <CardContent>

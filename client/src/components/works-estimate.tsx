@@ -273,6 +273,9 @@ export function WorksEstimate({ projectId }: WorksEstimateProps) {
     console.log('Добавление работы в смету:', { work, sectionTitle });
     saveToHistory(`Добавление работы "${work.title}" в смету`);
     
+    // Сохраняем работу в localStorage для передачи в раздел "Смета"
+    const existingEstimate = JSON.parse(localStorage.getItem('projectEstimate') || '[]');
+    
     const workWithMaterials = {
       id: `estimate-${Date.now()}-${Math.random()}`,
       sectionTitle,
@@ -290,24 +293,23 @@ export function WorksEstimate({ projectId }: WorksEstimateProps) {
       }))
     };
 
-    console.log('Создана работа для сметы:', workWithMaterials);
-    setEstimateWorks(prev => {
-      const newWorks = [...prev, workWithMaterials];
-      console.log('Обновленный список работ сметы:', newWorks);
-      return newWorks;
-    });
+    const updatedEstimate = [...existingEstimate, workWithMaterials];
+    localStorage.setItem('projectEstimate', JSON.stringify(updatedEstimate));
     
-    // Прокрутка к секции сметы
-    setTimeout(() => {
-      const estimateSection = document.getElementById('estimate-section');
-      if (estimateSection) {
-        estimateSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-    }, 100);
+    // Также добавляем в локальный стейт для отображения
+    setEstimateWorks(prev => [...prev, workWithMaterials]);
+    
+    // Диспетчим событие для обновления других компонентов
+    window.dispatchEvent(new CustomEvent('estimateUpdated', { 
+      detail: { estimate: updatedEstimate, action: 'add', work: workWithMaterials }
+    }));
+    
+    console.log('Работа сохранена в смету:', workWithMaterials);
     
     toast({
       title: "Работа добавлена в смету",
-      description: `"${work.title}" добавлена с ${work.materials.length} материалами`,
+      description: `"${work.title}" добавлена в раздел "Смета". Перейдите в боковое меню > Смета для просмотра.`,
+      duration: 4000,
     });
   };
 
