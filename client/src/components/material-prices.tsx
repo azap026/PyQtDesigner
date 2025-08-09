@@ -25,6 +25,8 @@ export function MaterialPrices() {
   const [editingMaterial, setEditingMaterial] = useState<string | null>(null);
   const [editPrice, setEditPrice] = useState("");
   const [showOnlyErrors, setShowOnlyErrors] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(100);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -157,6 +159,12 @@ export function MaterialPrices() {
     });
   }, [materials, searchTerm, showOnlyErrors]);
 
+  // Пагинация
+  const totalPages = Math.ceil(filteredMaterials.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentPageMaterials = filteredMaterials.slice(startIndex, endIndex);
+
   const handleEditPrice = (materialId: string, currentPrice: string | number) => {
     setEditingMaterial(materialId);
     setEditPrice(currentPrice?.toString() || "");
@@ -230,6 +238,7 @@ export function MaterialPrices() {
           className={`cursor-pointer transition-colors ${showOnlyErrors ? 'ring-2 ring-red-500 bg-red-50 dark:bg-red-950/20' : 'hover:bg-gray-50 dark:hover:bg-gray-800'}`}
           onClick={() => {
             setShowOnlyErrors(!showOnlyErrors);
+            setCurrentPage(1); // Сбрасываем на первую страницу при смене фильтра
             if (!showOnlyErrors) {
               setSearchTerm(""); // Очищаем поиск при включении фильтра ошибок
             }
@@ -323,6 +332,7 @@ export function MaterialPrices() {
               onChange={(e) => {
                 const value = e.target.value;
                 setSearchTerm(value);
+                setCurrentPage(1); // Сбрасываем на первую страницу при поиске
                 if (value && showOnlyErrors) {
                   setShowOnlyErrors(false); // Отключаем фильтр ошибок при поиске
                 }
@@ -342,7 +352,10 @@ export function MaterialPrices() {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setShowOnlyErrors(false)}
+                onClick={() => {
+                  setShowOnlyErrors(false);
+                  setCurrentPage(1);
+                }}
                 className="text-red-600 hover:text-red-800"
               >
                 <X className="h-4 w-4" />
@@ -359,15 +372,20 @@ export function MaterialPrices() {
             <div>
               <CardTitle>Цены на материалы</CardTitle>
               <CardDescription>
-                Показано {Math.min(100, filteredMaterials.length)} из {materials.length} материалов
-                {filteredMaterials.length > 100 && (
-                  <span className="text-orange-600 dark:text-orange-400 font-medium">
-                    {" "}(лимит 100 для производительности)
+                Показано {startIndex + 1}-{Math.min(endIndex, filteredMaterials.length)} из {filteredMaterials.length} материалов
+                {filteredMaterials.length !== materials.length && (
+                  <span className="text-blue-600 dark:text-blue-400 font-medium">
+                    {" "}(отфильтровано из {materials.length})
                   </span>
                 )}
                 {showOnlyErrors && (
                   <span className="text-red-600 dark:text-red-400 font-medium">
                     {" "}(только с ошибками)
+                  </span>
+                )}
+                {totalPages > 1 && (
+                  <span className="text-gray-600 dark:text-gray-400 font-medium">
+                    {" "}— Страница {currentPage} из {totalPages}
                   </span>
                 )}
               </CardDescription>
@@ -397,7 +415,7 @@ export function MaterialPrices() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredMaterials.slice(0, 100).map((material, index) => {
+                  {currentPageMaterials.map((material, index) => {
                     const hasIssues = hasMaterialIssues(material);
                     const issues = getMaterialIssues(material);
                     
@@ -408,7 +426,7 @@ export function MaterialPrices() {
                       >
                         <TableCell className="font-medium">
                           <div className="flex items-center space-x-2">
-                            <span>{index + 1}</span>
+                            <span>{startIndex + index + 1}</span>
                             {hasIssues && (
                               <div className="flex flex-wrap gap-1">
                                 {issues.map((issue, idx) => (
@@ -535,6 +553,78 @@ export function MaterialPrices() {
                 
                 </TableBody>
               </Table>
+            </div>
+          )}
+          
+          {/* Пагинация */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between pt-4 border-t">
+              <div className="text-sm text-gray-500">
+                Всего страниц: {totalPages}
+              </div>
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(1)}
+                  disabled={currentPage === 1}
+                >
+                  ««
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                  disabled={currentPage === 1}
+                >
+                  ‹ Назад
+                </Button>
+                
+                <div className="flex items-center space-x-1">
+                  {/* Показываем номера страниц */}
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum;
+                    if (totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1;
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i;
+                    } else {
+                      pageNum = currentPage - 2 + i;
+                    }
+                    
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={currentPage === pageNum ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setCurrentPage(pageNum)}
+                        className={currentPage === pageNum ? "bg-yellow-400 text-black font-semibold hover:bg-yellow-500" : ""}
+                      >
+                        {pageNum}
+                      </Button>
+                    );
+                  })}
+                </div>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                  disabled={currentPage === totalPages}
+                >
+                  Вперед ›
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(totalPages)}
+                  disabled={currentPage === totalPages}
+                >
+                  »»
+                </Button>
+              </div>
             </div>
           )}
         </CardContent>
