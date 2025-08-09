@@ -135,7 +135,7 @@ export function RoomParametersTable({ onDataChange }: RoomParametersTableProps) 
       field: "doors" as keyof RoomData,
     },
     {
-      label: "Окно 1: Длина/Высота, (м)",
+      label: "Окно 1: Длина/Высота, (м2)",
       bg: "bg-purple-50 dark:bg-purple-900/20",
       type: "header" as const,
     },
@@ -154,7 +154,7 @@ export function RoomParametersTable({ onDataChange }: RoomParametersTableProps) 
       field: "window1_b" as keyof RoomData,
     },
     {
-      label: "Окно 2: Длина/Высота, (м)",
+      label: "Окно 2: Длина/Высота, (м2)",
       bg: "bg-purple-50 dark:bg-purple-900/20",
       type: "header" as const,
     },
@@ -173,7 +173,7 @@ export function RoomParametersTable({ onDataChange }: RoomParametersTableProps) 
       field: "window2_b" as keyof RoomData,
     },
     {
-      label: "Окно 3: Длина/Высота, (м)",
+      label: "Окно 3: Длина/Высота, (м2)",
       bg: "bg-purple-50 dark:bg-purple-900/20",
       type: "header" as const,
     },
@@ -192,7 +192,7 @@ export function RoomParametersTable({ onDataChange }: RoomParametersTableProps) 
       field: "window3_b" as keyof RoomData,
     },
     {
-      label: "Портал: Длина/Высота, (м)",
+      label: "Портал: Длина/Высота, (м2)",
       bg: "bg-purple-50 dark:bg-purple-900/20",
       type: "header" as const,
     },
