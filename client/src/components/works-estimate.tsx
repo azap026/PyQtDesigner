@@ -82,6 +82,7 @@ export function WorksEstimate({ projectId }: WorksEstimateProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedSection, setSelectedSection] = useState<string>("all");
   const [expandedSections, setExpandedSections] = useState<Set<number>>(new Set([1]));
+  const [expandedWorks, setExpandedWorks] = useState<Set<string>>(new Set());
   const [editingWork, setEditingWork] = useState<any>(null);
   const [newQuantity, setNewQuantity] = useState("");
   const [editingMaterial, setEditingMaterial] = useState<{ sectionId: number; workIndex: string; materialIndex: number } | null>(null);
@@ -154,6 +155,17 @@ export function WorksEstimate({ projectId }: WorksEstimateProps) {
       newExpanded.add(sectionId);
     }
     setExpandedSections(newExpanded);
+  };
+
+  // Управление раскрытием материалов в работах
+  const toggleWorkMaterials = (workKey: string) => {
+    const newExpanded = new Set(expandedWorks);
+    if (newExpanded.has(workKey)) {
+      newExpanded.delete(workKey);
+    } else {
+      newExpanded.add(workKey);
+    }
+    setExpandedWorks(newExpanded);
   };
 
   // Получаем все разделы для фильтрации
@@ -499,7 +511,27 @@ export function WorksEstimate({ projectId }: WorksEstimateProps) {
                                   >
                                     <Plus className="h-3 w-3" />
                                   </Button>
+                                  {work.materials.length > 0 && (
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => toggleWorkMaterials(`${section.id}-${work.index}`)}
+                                      className="h-6 w-6 p-0 shrink-0"
+                                      title={expandedWorks.has(`${section.id}-${work.index}`) ? "Скрыть материалы" : "Показать материалы"}
+                                    >
+                                      {expandedWorks.has(`${section.id}-${work.index}`) ? (
+                                        <ChevronDown className="h-3 w-3" />
+                                      ) : (
+                                        <ChevronRight className="h-3 w-3" />
+                                      )}
+                                    </Button>
+                                  )}
                                   <div className="font-medium">{work.title}</div>
+                                  {work.materials.length > 0 && (
+                                    <Badge variant="outline" className="ml-2 text-xs">
+                                      {work.materials.length} мат.
+                                    </Badge>
+                                  )}
                                 </div>
                               </TableCell>
                               <TableCell className="text-center">
@@ -541,8 +573,8 @@ export function WorksEstimate({ projectId }: WorksEstimateProps) {
                               </TableCell>
                             </TableRow>
                             
-                            {/* Материалы */}
-                            {work.materials.map((material, materialIndex) => {
+                            {/* Материалы (показываем только если работа развернута) */}
+                            {expandedWorks.has(`${section.id}-${work.index}`) && work.materials.map((material, materialIndex) => {
                               const isEditing = editingMaterial && 
                                 editingMaterial.sectionId === section.id && 
                                 editingMaterial.workIndex === work.index && 
