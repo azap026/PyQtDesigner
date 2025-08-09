@@ -422,7 +422,7 @@ export function HierarchyDatabase() {
             <Button 
               onClick={() => fileInputRef.current?.click()}
               disabled={importMutation.isPending}
-              className="flex items-center space-x-2"
+              className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white"
             >
               <Upload className="h-4 w-4" />
               <span>
