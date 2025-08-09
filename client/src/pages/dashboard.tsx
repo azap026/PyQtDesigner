@@ -242,6 +242,41 @@ export default function Dashboard() {
                           </div>
                           <div className="grid grid-cols-2 gap-4">
                             <div>
+                              <label className="block text-sm font-medium mb-2">Номер договора</label>
+                              <input 
+                                type="text" 
+                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700"
+                                placeholder="№ 001/2025"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium mb-2">Срок выполнения</label>
+                              <input 
+                                type="date" 
+                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700"
+                              />
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-sm font-medium mb-2">Заказчик</label>
+                              <input 
+                                type="text" 
+                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700"
+                                placeholder="Наименование заказчика"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium mb-2">Подрядчик</label>
+                              <input 
+                                type="text" 
+                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700"
+                                placeholder="Наименование подрядчика"
+                              />
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
                               <label className="block text-sm font-medium mb-2">Общая площадь (м²)</label>
                               <input 
                                 type="number" 
