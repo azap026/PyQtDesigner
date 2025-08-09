@@ -297,6 +297,14 @@ export function WorksEstimate({ projectId }: WorksEstimateProps) {
       return newWorks;
     });
     
+    // Прокрутка к секции сметы
+    setTimeout(() => {
+      const estimateSection = document.getElementById('estimate-section');
+      if (estimateSection) {
+        estimateSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 100);
+    
     toast({
       title: "Работа добавлена в смету",
       description: `"${work.title}" добавлена с ${work.materials.length} материалами`,
@@ -647,14 +655,22 @@ export function WorksEstimate({ projectId }: WorksEstimateProps) {
       </Card>
 
       {/* Смета - показываем всегда для отладки */}
-      <Card>
+      <Card id="estimate-section" className="border-2 border-green-200 dark:border-green-800">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 text-green-700 dark:text-green-300">
             <Calculator className="h-5 w-5" />
             Смета проекта
+            {estimateWorks.length > 0 && (
+              <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                {estimateWorks.length} работ
+              </Badge>
+            )}
           </CardTitle>
           <CardDescription>
-            {estimateWorks.length} работ в смете (состояние: {JSON.stringify(estimateWorks.length)})
+            {estimateWorks.length === 0 
+              ? "Нажмите кнопку '+' рядом с работой чтобы добавить её в смету"
+              : `Добавлено ${estimateWorks.length} работ в смету проекта`
+            }
           </CardDescription>
         </CardHeader>
         {estimateWorks.length === 0 ? (
