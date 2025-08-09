@@ -123,3 +123,14 @@ User prefers Russian language for all interface and communication.
 - **Comprehensive Material Prices Management**: Full Excel import/export system with error detection and filtering
 - **Performance Optimization**: Added search performance improvements with memoization and display limits
 - **Detailed Estimate Component**: Professional construction estimate interface matching industry standards with section grouping, material images, and cost breakdowns
+- **Global Undo/Redo System**: Implemented comprehensive undo functionality with Ctrl+Z support across all major operations
+- **Interactive Room Parameters**: Excel-like calculation tables with automatic area calculations for walls, openings, and surfaces
+- **Contract Management Integration**: Added contract fields (номер договора, срок выполнения, заказчик, подрядчик) to project parameters
+
+### Backup Point - January 9, 2025
+Current stable state before implementing automatic area-to-work-type linking system. All core functionality working:
+- Room parameters table with automatic calculations
+- Material prices management with Excel import/export
+- Hierarchical work structure with bulk operations
+- Global undo/redo system for all operations
+- Comprehensive estimate generation system
