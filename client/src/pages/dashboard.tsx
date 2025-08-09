@@ -7,7 +7,7 @@ import { WorkDetails } from "@/components/work-details";
 import { ProjectSummary } from "@/components/project-summary";
 import { WorkModal } from "@/components/work-modal";
 import { MaterialModal } from "@/components/material-modal";
-import { MaterialsDatabase } from "@/components/materials-database";
+
 import { MaterialPrices } from "@/components/material-prices";
 import { HierarchyDatabase } from "@/components/hierarchy-database";
 import { useToast } from "@/hooks/use-toast";
@@ -158,7 +158,6 @@ export default function Dashboard() {
                   {activeTab === "materials" && "Материалы"}
                   {activeTab === "estimate" && "Смета"}
                   {activeTab === "reports" && "Отчеты"}
-                  {activeTab === "materials-db" && "База данных материалов"}
                   {activeTab === "material-prices" && "Цены на материалы"}
                   {activeTab === "hierarchy-db" && "База работ"}
                 </h2>
@@ -167,7 +166,6 @@ export default function Dashboard() {
                   {activeTab === "materials" && "Управление материалами проекта"}
                   {activeTab === "estimate" && "Просмотр и экспорт сметы"}
                   {activeTab === "reports" && "Отчёты и аналитика"}
-                  {activeTab === "materials-db" && "Управление справочником материалов"}
                   {activeTab === "material-prices" && "Управление ценами материалов и ссылками"}
                   {activeTab === "hierarchy-db" && "Управление иерархической структурой работ"}
                 </p>
@@ -203,10 +201,6 @@ export default function Dashboard() {
                     />
                   </div>
                 )
-              )}
-
-              {activeTab === "materials-db" && (
-                <MaterialsDatabase />
               )}
 
               {activeTab === "material-prices" && (

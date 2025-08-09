@@ -31,7 +31,6 @@ const navigationItems = [
 ];
 
 const settingsItems = [
-  { id: "materials-db", label: "База материалов", icon: Package },
   { id: "material-prices", label: "Цены на материалы", icon: DollarSign },
   { id: "hierarchy-db", label: "База работ", icon: Hammer },
 ];

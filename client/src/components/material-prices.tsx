@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,7 +14,8 @@ import {
   DollarSign,
   ExternalLink,
   Trash2,
-  Upload
+  Upload,
+  Download
 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import type { Material } from "@shared/schema";
@@ -23,6 +24,7 @@ export function MaterialPrices() {
   const [searchTerm, setSearchTerm] = useState("");
   const [editingMaterial, setEditingMaterial] = useState<string | null>(null);
   const [editPrice, setEditPrice] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -52,6 +54,65 @@ export function MaterialPrices() {
     },
   });
 
+  const importMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append("file", file);
+      
+      const response = await fetch("/api/materials/import", {
+        method: "POST",
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      return response.json();
+    },
+    onSuccess: (result: any) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/materials"] });
+      toast({
+        title: "Импорт завершен",
+        description: `Импортировано: ${result.imported} материалов${result.errors?.length ? `. Ошибок: ${result.errors.length}` : ""}`,
+        variant: result.errors?.length ? "destructive" : "default",
+      });
+      
+      if (result.errors?.length > 0) {
+        console.error("Import errors:", result.errors);
+      }
+    },
+    onError: (error) => {
+      toast({
+        title: "Ошибка импорта",
+        description: "Не удалось импортировать данные материалов",
+        variant: "destructive",
+      });
+      console.error("Import error:", error);
+    },
+  });
+
+  const clearMutation = useMutation({
+    mutationFn: async () => {
+      return apiRequest("DELETE", "/api/materials/clear");
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/materials"] });
+      toast({
+        title: "Успех",
+        description: "База материалов очищена",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Ошибка",
+        description: "Не удалось очистить базу материалов",
+        variant: "destructive",
+      });
+      console.error("Clear error:", error);
+    },
+  });
+
   const filteredMaterials = materials.filter(material =>
     material.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     material.unit.toLowerCase().includes(searchTerm.toLowerCase())
@@ -78,6 +139,22 @@ export function MaterialPrices() {
   const handleCancelEdit = () => {
     setEditingMaterial(null);
     setEditPrice("");
+  };
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      importMutation.mutate(file);
+    }
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const handleClearDatabase = () => {
+    if (window.confirm("Вы уверены, что хотите очистить всю базу материалов? Это действие нельзя отменить.")) {
+      clearMutation.mutate();
+    }
   };
 
   if (isLoading) {
@@ -121,6 +198,50 @@ export function MaterialPrices() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Управление данными */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Управление данными</CardTitle>
+          <CardDescription>
+            Импорт материалов из Excel файла и управление базой
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex flex-wrap gap-2">
+            <Button 
+              onClick={() => fileInputRef.current?.click()}
+              disabled={importMutation.isPending}
+              className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              <Upload className="h-4 w-4" />
+              <span>
+                {importMutation.isPending ? "Импорт..." : "Импорт из Excel"}
+              </span>
+            </Button>
+            
+            <Button 
+              variant="destructive" 
+              onClick={handleClearDatabase}
+              disabled={clearMutation.isPending}
+              className="flex items-center space-x-2"
+            >
+              <Trash2 className="h-4 w-4" />
+              <span>
+                {clearMutation.isPending ? "Очистка..." : "Очистить базу"}
+              </span>
+            </Button>
+          </div>
+
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileUpload}
+            accept=".xlsx,.xls,.csv"
+            className="hidden"
+          />
+        </CardContent>
+      </Card>
 
       {/* Поиск */}
       <Card>
