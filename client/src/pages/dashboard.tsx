@@ -245,7 +245,9 @@ export default function Dashboard() {
                               <label className="block text-sm font-medium mb-2">Общая площадь (м²)</label>
                               <input 
                                 type="number" 
-                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700"
+                                value={roomsData.reduce((sum, room) => sum + (room.floorArea || 0), 0).toFixed(2)}
+                                readOnly
+                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-yellow-50 dark:bg-yellow-900/20 text-gray-700 dark:text-gray-300 cursor-not-allowed"
                                 placeholder="0"
                               />
                             </div>
