@@ -108,6 +108,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Clear all materials (MUST be before /api/materials/:id route)
+  app.delete("/api/materials/clear", async (req, res) => {
+    try {
+      const materials = await storage.getMaterials();
+      let deletedCount = 0;
+      
+      for (const material of materials) {
+        await storage.deleteMaterial(material.id);
+        deletedCount++;
+      }
+      
+      res.json({ deleted: deletedCount });
+    } catch (error) {
+      console.error("Error clearing materials:", error);
+      res.status(500).json({ error: "Failed to clear materials database" });
+    }
+  });
+
   app.delete("/api/materials/:id", async (req, res) => {
     try {
       await storage.deleteMaterial(req.params.id);
@@ -161,6 +179,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error updating work item:", error);
       res.status(400).json({ error: "Failed to update work item" });
+    }
+  });
+
+  // Clear all work items (MUST be before /api/work-items/:id route)
+  app.delete("/api/work-items/clear", async (req, res) => {
+    try {
+      const projects = await storage.getProjects();
+      let deletedCount = 0;
+      
+      for (const project of projects) {
+        const workItems = await storage.getWorkItems(project.id);
+        for (const workItem of workItems) {
+          await storage.deleteWorkItem(workItem.id);
+          deletedCount++;
+        }
+      }
+      
+      res.json({ deleted: deletedCount });
+    } catch (error) {
+      console.error("Error clearing work items:", error);
+      res.status(500).json({ error: "Failed to clear work items database" });
     }
   });
 
@@ -487,23 +526,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Clear all materials
-  app.delete("/api/materials/clear", async (req, res) => {
-    try {
-      const materials = await storage.getMaterials();
-      let deletedCount = 0;
-      
-      for (const material of materials) {
-        await storage.deleteMaterial(material.id);
-        deletedCount++;
-      }
-      
-      res.json({ deleted: deletedCount });
-    } catch (error) {
-      console.error("Error clearing materials:", error);
-      res.status(500).json({ error: "Failed to clear materials database" });
-    }
-  });
+
 
   // Work Items Import
   app.post("/api/work-items-import", upload.single("file"), async (req, res) => {
@@ -645,26 +668,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Clear all work items
-  app.delete("/api/work-items/clear", async (req, res) => {
-    try {
-      const projects = await storage.getProjects();
-      let deletedCount = 0;
-      
-      for (const project of projects) {
-        const workItems = await storage.getWorkItems(project.id);
-        for (const workItem of workItems) {
-          await storage.deleteWorkItem(workItem.id);
-          deletedCount++;
-        }
-      }
-      
-      res.json({ deleted: deletedCount });
-    } catch (error) {
-      console.error("Error clearing work items:", error);
-      res.status(500).json({ error: "Failed to clear work items database" });
-    }
-  });
+
 
   const httpServer = createServer(app);
   return httpServer;
