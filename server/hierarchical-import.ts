@@ -20,9 +20,9 @@ interface ImportResult {
 }
 
 /**
- * Определяет тип записи по индексу
+ * Определяет тип записи по индексу и дополнительной информации
  */
-export function determineRecordType(index: string): 'section' | 'subsection' | 'task' | 'ignore' {
+export function determineRecordType(index: string, title?: string, unit?: string): 'section' | 'subsection' | 'task' | 'ignore' {
   if (!index || typeof index !== 'string') return 'ignore';
   
   const trimmed = index.trim();
@@ -39,6 +39,12 @@ export function determineRecordType(index: string): 'section' | 'subsection' | '
   
   // Подраздел: оканчивается на "-" и содержит точку (например: "1.1-", "6.2-")
   if (trimmed.endsWith('-') && trimmed.includes('.')) {
+    return 'subsection';
+  }
+  
+  // Специальная логика: если нет единицы измерения и название начинается с индекса + пробел,
+  // то это подраздел (например: "4.1 Демонтаж душевой кабины")
+  if (!unit && title && title.startsWith(trimmed + ' ')) {
     return 'subsection';
   }
   
@@ -207,8 +213,8 @@ export function parseHierarchicalExcel(buffer: Buffer): ParsedRecord[] {
       continue;
     }
     
-    const type = determineRecordType(index);
-    console.log(`Строка ${orderNum + 2}: шифр="${index}", тип="${type}"`);
+    const type = determineRecordType(index, title, unit);
+    console.log(`Строка ${orderNum + 2}: шифр="${index}", тип="${type}", единица="${unit}"`);
     if (type === 'ignore') continue;
     
     records.push({
@@ -309,8 +315,7 @@ export async function importHierarchicalStructure(buffer: Buffer): Promise<Impor
         
         // Для работ обязательны единица измерения и себестоимость
         if (!record.unit || record.unit === "") {
-          // Если единица измерения отсутствует, возможно это подраздел, а не работа
-          console.log(`Пропускаем работу без единицы измерения: "${record.index}" - возможно это подраздел`);
+          console.log(`Пропускаем работу без единицы измерения: "${record.index}"`);
           continue;
         }
         

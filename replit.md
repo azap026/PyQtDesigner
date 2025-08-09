@@ -117,3 +117,6 @@ User prefers Russian language for all interface and communication.
 - Implemented bulk price update functionality with coefficient-based percentage changes
 - Added "Коэффициент цен" button with modal dialog for mass price adjustments
 - Created API endpoint (/api/hierarchy/bulk-update) for applying percentage changes to all work items
+- Fixed import issues with Russian number format (comma to dot conversion)
+- Enhanced automatic parent section creation for missing hierarchical relationships
+- Improved record type detection to properly handle subsections without units
