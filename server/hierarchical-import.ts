@@ -313,10 +313,28 @@ export async function importHierarchicalStructure(buffer: Buffer): Promise<Impor
           continue;
         }
         
-        const parentSectionId = sectionMap.get(parentIndex);
+        let parentSectionId = sectionMap.get(parentIndex);
         if (!parentSectionId) {
-          errors.push(`Строка ${record.orderNum + 2}: не найден родительский раздел "${parentIndex}" для работы "${record.index}"`);
-          continue;
+          // Автоматически создаем отсутствующий подраздел
+          console.log(`Автосоздание подраздела "${parentIndex}" для работы "${record.index}"`);
+          try {
+            const autoSectionData = {
+              index: parentIndex,
+              displayIndex: parentIndex + '-',
+              title: `${parentIndex} Автоматически созданный подраздел`,
+              parentId: null, // Определим родителя позже если нужно
+              orderNum: record.orderNum - 0.5 // Ставим перед текущей работой
+            };
+            
+            const createdSection = await storage.createSection(autoSectionData as InsertSection);
+            sectionMap.set(parentIndex, createdSection.id);
+            parentSectionId = createdSection.id;
+            sectionsCreated++;
+            
+          } catch (createError) {
+            errors.push(`Строка ${record.orderNum + 2}: не удалось создать подраздел "${parentIndex}" для работы "${record.index}": ${createError instanceof Error ? createError.message : 'неизвестная ошибка'}`);
+            continue;
+          }
         }
         
         // Для работ обязательны единица измерения и себестоимость
