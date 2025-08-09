@@ -256,7 +256,7 @@ export function RoomParametersTable({ onDataChange }: RoomParametersTableProps) 
               </th>
               {Array.from({ length: 12 }, (_, i) => (
                 <th key={i} className="border border-gray-300 dark:border-gray-600 px-2 py-1 text-center font-medium">
-                  {i < 9 ? `Помещение ${i + 1}` : `санузел${i - 8}`}
+                  {i < 9 ? `Помещение ${i + 1}` : `С/У${i - 8}`}
                 </th>
               ))}
             </tr>
