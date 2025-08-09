@@ -215,7 +215,7 @@ export function WorksEstimate({ projectId }: WorksEstimateProps) {
         return matchesSearch && matchesSection;
       })
     })).filter(section => section.works.length > 0);
-  }, [searchTerm, selectedSection]);
+  }, [currentData, searchTerm, selectedSection]); // Добавляем currentData как зависимость
 
   // Подсчет общей стоимости
   const totalCost = useMemo(() => {
