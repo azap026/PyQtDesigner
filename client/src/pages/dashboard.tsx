@@ -11,6 +11,7 @@ import { MaterialModal } from "@/components/material-modal";
 import { MaterialPrices } from "@/components/material-prices";
 import { HierarchyDatabase } from "@/components/hierarchy-database";
 import { DetailedEstimate } from "@/components/detailed-estimate";
+import { ProjectWorksDatabase } from "@/components/project-works-database";
 import { useToast } from "@/hooks/use-toast";
 import type { ProjectWithWorkItems, WorkItem, Project } from "@shared/schema";
 
@@ -163,7 +164,7 @@ export default function Dashboard() {
                   {activeTab === "hierarchy-db" && "База работ"}
                 </h2>
                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                  {activeTab === "works" && "Управление видами работ и расчёт стоимости"}
+                  {activeTab === "works" && "Управление видами работ проекта с количеством и суммами"}
                   {activeTab === "materials" && "Управление материалами проекта"}
                   {activeTab === "estimate" && "Просмотр и экспорт сметы"}
                   {activeTab === "reports" && "Отчёты и аналитика"}
@@ -184,23 +185,7 @@ export default function Dashboard() {
                     </div>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
-                    <WorksList
-                      workItems={currentProject.workItems}
-                      selectedWorkId={selectedWorkId}
-                      onWorkSelect={handleWorkSelect}
-                      onAddWork={handleAddWork}
-                      onEditWork={handleEditWork}
-                      onCalculate={handleCalculate}
-                      projectId={currentProjectId}
-                    />
-
-                    <WorkDetails
-                      selectedWork={selectedWork}
-                      onAddMaterial={handleAddMaterial}
-                      projectId={currentProjectId}
-                    />
-                  </div>
+                  <ProjectWorksDatabase projectId={currentProjectId} />
                 )
               )}
 
