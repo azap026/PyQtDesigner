@@ -52,8 +52,11 @@ export default function AreaWorkLinking({ projectAreas }: AreaWorkLinkingProps) 
       areaType?: AreaType;
       areaMultiplier?: number;
     }) => {
-      return apiRequest(`/api/area-configs`, {
+      return apiRequest("/api/area-configs", {
         method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify(config),
       });
     },
@@ -186,8 +189,8 @@ export default function AreaWorkLinking({ projectAreas }: AreaWorkLinkingProps) 
 
       {/* Диалог настройки */}
       <Dialog open={isConfigDialogOpen} onOpenChange={setIsConfigDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
+        <DialogContent className="sm:max-w-[500px] max-h-[90vh] flex flex-col">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle>Настройка привязки площадей</DialogTitle>
             <DialogDescription>
               Настройте автоматическое заполнение объема работы на основе площадей помещений
@@ -195,8 +198,9 @@ export default function AreaWorkLinking({ projectAreas }: AreaWorkLinkingProps) 
           </DialogHeader>
           
           {selectedTask && (
-            <div className="space-y-4">
-              <div>
+            <div className="flex-1 flex flex-col min-h-0">
+              <div className="flex-1 overflow-y-auto space-y-4 pr-2">
+                <div>
                 <Label className="text-sm font-medium text-gray-700">Работа</Label>
                 <div className="mt-1 p-2 bg-gray-50 rounded text-sm">
                   <div className="font-medium">{selectedTask.index} {selectedTask.title}</div>
@@ -218,7 +222,7 @@ export default function AreaWorkLinking({ projectAreas }: AreaWorkLinkingProps) 
                 </div>
                 
                 {selectedTask.autoFillFromArea && (
-                  <>
+                  <div className="space-y-3">
                     <div>
                       <Label>Тип площади</Label>
                       <Select
@@ -270,25 +274,29 @@ export default function AreaWorkLinking({ projectAreas }: AreaWorkLinkingProps) 
                         </div>
                       </div>
                     )}
-                  </>
+                  </div>
                 )}
+                </div>
               </div>
               
-              <div className="flex justify-end gap-2 pt-4">
-                <Button
-                  variant="outline"
-                  onClick={() => setIsConfigDialogOpen(false)}
-                >
-                  Отмена
-                </Button>
-                <Button 
-                  onClick={handleSaveConfig}
-                  disabled={saveConfigMutation.isPending}
-                  className="bg-primary hover:bg-primary/90 text-white"
-                >
-                  <Save className="h-4 w-4 mr-2" />
-                  {saveConfigMutation.isPending ? "Сохранение..." : "Сохранить"}
-                </Button>
+              {/* Кнопки всегда видны внизу */}
+              <div className="flex-shrink-0 border-t pt-4 mt-4">
+                <div className="flex justify-end gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsConfigDialogOpen(false)}
+                  >
+                    Отмена
+                  </Button>
+                  <Button 
+                    onClick={handleSaveConfig}
+                    disabled={saveConfigMutation.isPending}
+                    className="bg-primary hover:bg-primary/90 text-white"
+                  >
+                    <Save className="h-4 w-4 mr-2" />
+                    {saveConfigMutation.isPending ? "Сохранение..." : "Сохранить"}
+                  </Button>
+                </div>
               </div>
             </div>
           )}
