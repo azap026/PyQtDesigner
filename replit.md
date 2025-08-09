@@ -114,3 +114,6 @@ User prefers Russian language for all interface and communication.
 - Added inline editing functionality for costPrice (себестоимость) values
 - Fixed data duplication problems and implemented proper database clearing
 - Created working CSV template download with correct UTF-8 encoding
+- Implemented bulk price update functionality with coefficient-based percentage changes
+- Added "Коэффициент цен" button with modal dialog for mass price adjustments
+- Created API endpoint (/api/hierarchy/bulk-update) for applying percentage changes to all work items
