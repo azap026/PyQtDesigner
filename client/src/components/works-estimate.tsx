@@ -87,8 +87,51 @@ export function WorksEstimate({ projectId }: WorksEstimateProps) {
   const [editingMaterial, setEditingMaterial] = useState<{ sectionId: number; workIndex: string; materialIndex: number } | null>(null);
   const [materialSearchTerm, setMaterialSearchTerm] = useState("");
   const [selectedMaterial, setSelectedMaterial] = useState<any>(null);
+  const [undoHistory, setUndoHistory] = useState<any[]>([]);
+  const [currentData, setCurrentData] = useState(estimateData);
   
   const { toast } = useToast();
+
+  // Сохранение состояния в историю для отмены
+  const saveToHistory = (description: string) => {
+    const newHistory = [...undoHistory, { 
+      data: JSON.parse(JSON.stringify(currentData)), 
+      description,
+      timestamp: Date.now()
+    }];
+    // Ограничиваем историю до 10 последних действий
+    if (newHistory.length > 10) {
+      newHistory.shift();
+    }
+    setUndoHistory(newHistory);
+  };
+
+  // Отмена последнего действия
+  const handleUndo = () => {
+    if (undoHistory.length > 0) {
+      const lastState = undoHistory[undoHistory.length - 1];
+      setCurrentData(lastState.data);
+      setUndoHistory(prev => prev.slice(0, -1));
+      
+      toast({
+        title: "Действие отменено",
+        description: `Отменено: ${lastState.description}`,
+      });
+    }
+  };
+
+  // Обработка горячих клавиш
+  React.useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.ctrlKey && event.key === 'z') {
+        event.preventDefault();
+        handleUndo();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [undoHistory]);
 
   // Поиск материалов для автозаполнения
   const { data: searchResults = [] } = useQuery({
@@ -114,12 +157,12 @@ export function WorksEstimate({ projectId }: WorksEstimateProps) {
 
   // Получаем все разделы для фильтрации
   const sections = useMemo(() => {
-    return estimateData.sections.map(section => section.title);
-  }, []);
+    return currentData.sections.map(section => section.title);
+  }, [currentData]);
 
   // Фильтрация работ
   const filteredSections = useMemo(() => {
-    return estimateData.sections.map(section => ({
+    return currentData.sections.map(section => ({
       ...section,
       works: section.works.filter((work) => {
         const matchesSearch = work.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -148,11 +191,24 @@ export function WorksEstimate({ projectId }: WorksEstimateProps) {
 
   const handleSaveQuantity = () => {
     if (editingWork) {
+      saveToHistory(`Изменение количества "${editingWork.title}"`);
+      
       const quantity = parseFloat(newQuantity) || 0;
-      // Здесь будет обновление количества в базе данных
-      editingWork.quantity = quantity;
+      const newData = JSON.parse(JSON.stringify(currentData));
+      
+      // Находим и обновляем работу
+      for (const section of newData.sections) {
+        const work = section.works.find((w: any) => w.index === editingWork.index);
+        if (work) {
+          work.quantity = quantity;
+          break;
+        }
+      }
+      
+      setCurrentData(newData);
       setEditingWork(null);
       setNewQuantity("");
+      
       toast({
         title: "Количество обновлено",
         description: `Количество для "${editingWork.title}" изменено на ${quantity}`,
@@ -168,10 +224,12 @@ export function WorksEstimate({ projectId }: WorksEstimateProps) {
 
   const handleSelectMaterial = (material: any) => {
     if (editingMaterial) {
-      // Находим материал в данных и обновляем его
-      const section = estimateData.sections.find(s => s.id === editingMaterial.sectionId);
+      saveToHistory(`Замена материала на "${material.name}"`);
+      
+      const newData = JSON.parse(JSON.stringify(currentData));
+      const section = newData.sections.find((s: any) => s.id === editingMaterial.sectionId);
       if (section) {
-        const work = section.works.find(w => w.index === editingMaterial.workIndex);
+        const work = section.works.find((w: any) => w.index === editingMaterial.workIndex);
         if (work && work.materials[editingMaterial.materialIndex]) {
           work.materials[editingMaterial.materialIndex] = {
             ...work.materials[editingMaterial.materialIndex],
@@ -182,6 +240,7 @@ export function WorksEstimate({ projectId }: WorksEstimateProps) {
         }
       }
       
+      setCurrentData(newData);
       setEditingMaterial(null);
       setMaterialSearchTerm("");
       setSelectedMaterial(null);
@@ -210,10 +269,20 @@ export function WorksEstimate({ projectId }: WorksEstimateProps) {
                 Виды работ
               </CardTitle>
               <CardDescription>
-                {estimateData.sections.length} разделов, {estimateData.sections.reduce((sum, s) => sum + s.works.length, 0)} работ, {estimateData.sections.reduce((sum, s) => sum + s.works.reduce((workSum, w) => workSum + w.materials.length, 0), 0)} материалов
+                {currentData.sections.length} разделов, {currentData.sections.reduce((sum: number, s: any) => sum + s.works.length, 0)} работ, {currentData.sections.reduce((sum: number, s: any) => sum + s.works.reduce((workSum: number, w: any) => workSum + w.materials.length, 0), 0)} материалов
               </CardDescription>
             </div>
             <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={handleUndo}
+                disabled={undoHistory.length === 0}
+                title="Отменить последнее действие (Ctrl+Z)"
+              >
+                <X className="h-4 w-4 mr-2" />
+                Отменить ({undoHistory.length})
+              </Button>
               <Button variant="outline" size="sm">
                 <Upload className="h-4 w-4 mr-2" />
                 Импорт Excel
