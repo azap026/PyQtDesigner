@@ -244,6 +244,7 @@ export function WorksEstimate({ projectId }: WorksEstimateProps) {
                   <TableHead className="w-12">Этап</TableHead>
                   <TableHead className="w-16">№</TableHead>
                   <TableHead>Наименование работ</TableHead>
+                  <TableHead className="text-center w-20">Изображение</TableHead>
                   <TableHead className="text-center w-20">Ед.изм</TableHead>
                   <TableHead className="text-center w-24">Кол-во</TableHead>
                   <TableHead className="text-center w-28">Себестоимость</TableHead>
@@ -255,7 +256,7 @@ export function WorksEstimate({ projectId }: WorksEstimateProps) {
               <TableBody>
                 {filteredSections.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center py-8 text-gray-500">
+                    <TableCell colSpan={10} className="text-center py-8 text-gray-500">
                       {searchTerm || selectedSection !== "all" ? 
                         "Работы не найдены по заданным критериям" : 
                         "Нет работ в смете"
@@ -268,7 +269,7 @@ export function WorksEstimate({ projectId }: WorksEstimateProps) {
                       {/* Заголовок раздела */}
                       <TableRow className="bg-blue-50 dark:bg-blue-950/20 hover:bg-blue-100 dark:hover:bg-blue-950/30">
                         <TableCell 
-                          colSpan={9}
+                          colSpan={10}
                           className="font-bold text-blue-700 dark:text-blue-300 cursor-pointer"
                           onClick={() => toggleSection(section.id)}
                         >
@@ -298,6 +299,11 @@ export function WorksEstimate({ projectId }: WorksEstimateProps) {
                               <TableCell className="font-medium">{work.index}</TableCell>
                               <TableCell>
                                 <div className="font-medium">{work.title}</div>
+                              </TableCell>
+                              <TableCell className="text-center">
+                                <div className="w-8 h-8 bg-gray-100 dark:bg-gray-800 rounded border flex items-center justify-center text-xs text-gray-500">
+                                  IMG
+                                </div>
                               </TableCell>
                               <TableCell className="text-center">{work.unit}</TableCell>
                               <TableCell className="text-center">
@@ -345,6 +351,7 @@ export function WorksEstimate({ projectId }: WorksEstimateProps) {
                                   <div className="text-sm">{material.name}</div>
                                 </TableCell>
                                 <TableCell className="text-center text-gray-500">—</TableCell>
+                                <TableCell className="text-center text-gray-500">—</TableCell>
                                 <TableCell className="text-center font-mono text-gray-600">
                                   {material.quantity.toFixed(3)}
                                 </TableCell>
@@ -365,7 +372,7 @@ export function WorksEstimate({ projectId }: WorksEstimateProps) {
                       {/* Итого по разделу */}
                       {expandedSections.has(section.id) && (
                         <TableRow className="bg-gray-100 dark:bg-gray-800 border-b-2 font-medium">
-                          <TableCell colSpan={7} className="text-right">
+                          <TableCell colSpan={8} className="text-right">
                             Итого по разделу "{section.title}":
                           </TableCell>
                           <TableCell className="text-center font-mono font-bold">
