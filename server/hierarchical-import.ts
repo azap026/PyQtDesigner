@@ -96,10 +96,28 @@ export function parseHierarchicalExcel(buffer: Buffer): ParsedRecord[] {
     
     if (!row || row.length === 0) continue;
     
-    const index = row[1]?.toString()?.trim(); // Столбец B (шифр)
+    // Обработка проблемы с Excel Date Serial Numbers  
+    let index = row[1]?.toString()?.trim(); // Столбец B (шифр)
     const title = row[2]?.toString()?.trim();  // Столбец C (наименование)  
     const unit = row[3]?.toString()?.trim() || '';   // Столбец D (единица измерения)
     const costPrice = row[4]?.toString()?.trim() || ''; // Столбец E (себестоимость)
+    
+    // Исправляем Excel Date Serial Numbers для разделов  
+    if (index === '36892') index = '1-';     // 1- преобразуется в 36892
+    if (index === '36923') index = '2-';     // 2- преобразуется в 36923
+    if (index === '36954') index = '3-';     // 3- преобразуется в 36954
+    if (index === '36985') index = '4-';     // 4- и так далее...
+    if (index === '37016') index = '5-';
+    if (index === '37047') index = '6-';
+    if (index === '37078') index = '7-';
+    if (index === '37109') index = '8-';
+    if (index === '37140') index = '9-';
+    if (index === '37170') index = '10-';
+    if (index === '37201') index = '11-';
+    if (index === '37232') index = '12-';
+    if (index === '37263') index = '13-';
+    if (index === '37294') index = '14-';
+    if (index === '37325') index = '15-';
     
     if (!index || !title) continue;
     
@@ -152,7 +170,7 @@ export async function importHierarchicalStructure(buffer: Buffer): Promise<Impor
         }
       }
       
-      const sectionData: InsertSection = {
+      const sectionData = {
         index: cleanIndex,
         displayIndex: record.index,
         title: record.title,
@@ -160,7 +178,7 @@ export async function importHierarchicalStructure(buffer: Buffer): Promise<Impor
         orderNum: record.orderNum
       };
       
-      const [createdSection] = await storage.createSection(sectionData);
+      const createdSection = await storage.createSection(sectionData);
       sectionMap.set(cleanIndex, createdSection.id);
       sectionsCreated++;
       
@@ -199,7 +217,7 @@ export async function importHierarchicalStructure(buffer: Buffer): Promise<Impor
           continue;
         }
         
-        const taskData: InsertTask = {
+        const taskData = {
           index: cleanIndex,
           displayIndex: record.index,
           title: record.title,
