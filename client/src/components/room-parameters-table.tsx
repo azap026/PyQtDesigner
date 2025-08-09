@@ -73,6 +73,14 @@ export function RoomParametersTable({ onDataChange }: RoomParametersTableProps) 
     return (room.portal_a || 0) * (room.portal_b || 0);
   };
 
+  const calculateOpenings = (room: RoomData): number => {
+    const window1Area = calculateWindow1Area(room);
+    const window2Area = calculateWindow2Area(room);
+    const window3Area = calculateWindow3Area(room);
+    const portalArea = calculatePortalArea(room);
+    return window1Area + window2Area + window3Area + portalArea;
+  };
+
   const calculateWindowSlopes = (room: RoomData): number => {
     const window1Area = calculateWindow1Area(room);
     const window2Area = calculateWindow2Area(room);
@@ -131,8 +139,8 @@ export function RoomParametersTable({ onDataChange }: RoomParametersTableProps) 
     {
       label: "Проемы",
       bg: "bg-white dark:bg-gray-800",
-      type: "input" as const,
-      field: "openings" as keyof RoomData,
+      type: "calculated" as const,
+      calculator: calculateOpenings,
     },
     {
       label: "Высота",
@@ -285,6 +293,7 @@ export function RoomParametersTable({ onDataChange }: RoomParametersTableProps) 
         <ul className="space-y-1 text-gray-600 dark:text-gray-400">
           <li>• <strong>Площадь стен:</strong> Периметр × Высота</li>
           <li>• <strong>Площадь пола:</strong> Ручной ввод</li>
+          <li>• <strong>Проемы:</strong> Окно 1 + Окно 2 + Окно 3 + Портал</li>
           <li>• <strong>Оконные/дверные откосы:</strong> 2 × (Сумма площадей всех окон)</li>
         </ul>
       </div>
