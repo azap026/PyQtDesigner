@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>СметаПро - Система расчёта строительных смет</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+    tailwind.config = {
+        theme: {
+            extend: {
+                colors: {
+                    'primary': '#1976D2',
+                    'primary-dark': '#1565C0',
+                    'secondary': '#FFC107',
+                    'success': '#4CAF50',
+                    'warning': '#FF9800',
+                    'error': '#F44336',
+                    'surface': '#FAFAFA',
+                    'surface-dark': '#212121',
+                    'on-surface': '#212121',
+                    'on-surface-dark': '#FAFAFA'
+                },
+                fontFamily: {
+                    'sans': ['Inter', 'system-ui', 'sans-serif']
+                }
+            }
+        },
+        darkMode: 'class'
+    };
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-surface dark:bg-surface-dark text-on-surface dark:text-on-surface-dark transition-colors duration-200">
+    
+    <!-- Header -->
+    <!-- @COMPONENT: Header [theme toggle, user info, project selector] -->
+    <header class="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50">
+        <div class="max-w-full px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center space-x-2">
+                        <i class="fas fa-calculator text-2xl text-primary"></i>
+                        <h1 class="text-xl font-bold text-primary">СметаПро</h1>
+                    </div>
+                    <div class="text-sm text-gray-500 dark:text-gray-400">
+                        Система расчёта строительных смет
+                    </div>
+                </div>
+                
+                <div class="flex items-center space-x-4">
+                    <!-- Project Selector -->
+                    <select class="px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-sm focus:ring-2 focus:ring-primary focus:border-transparent" data-mock="true">
+                        <option data-mock="true">Проект: Офисное здание А1</option>
+                        <option data-mock="true">Проект: Жилой комплекс</option>
+                        <option data-mock="true">Проект: Торговый центр</option>
+                    </select>
+                    
+                    <!-- Theme Toggle -->
+                    <button id="themeToggle" class="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" data-event="click:toggleTheme">
+                        <i class="fas fa-moon text-gray-600 dark:text-gray-300"></i>
+                    </button>
+                    
+                    <!-- User Menu -->
+                    <div class="flex items-center space-x-2">
+                        <div class="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white text-sm font-medium">
+                            <span data-mock="true">ИП</span>
+                        </div>
+                        <span class="text-sm font-medium" data-mock="true">Иван Петров</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+    <!-- @END_COMPONENT: Header -->
+
+    <!-- Main Content -->
+    <div class="flex h-[calc(100vh-73px)]">
+        
+        <!-- Sidebar -->
+        <!-- @COMPONENT: Sidebar [navigation, project actions] -->
+        <aside class="w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 overflow-y-auto">
+            <div class="p-4">
+                <!-- Project Actions -->
+                <div class="space-y-2 mb-6">
+                    <button class="w-full bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-md flex items-center justify-center space-x-2 transition-colors" data-event="click:createProject">
+                        <i class="fas fa-plus"></i>
+                        <span>Новый проект</span>
+                    </button>
+                    <button class="w-full bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 px-4 py-2 rounded-md flex items-center justify-center space-x-2 transition-colors" data-event="click:openProject">
+                        <i class="fas fa-folder-open"></i>
+                        <span>Открыть</span>
+                    </button>
+                    <button class="w-full bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 px-4 py-2 rounded-md flex items-center justify-center space-x-2 transition-colors" data-event="click:saveProject">
+                        <i class="fas fa-save"></i>
+                        <span>Сохранить</span>
+                    </button>
+                </div>
+
+                <!-- Navigation -->
+                <nav class="space-y-1">
+                    <a href="#" class="bg-primary text-white px-3 py-2 rounded-md flex items-center space-x-3 text-sm font-medium">
+                        <i class="fas fa-hammer w-4"></i>
+                        <span>Виды работ</span>
+                    </a>
+                    <a href="#" class="text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 px-3 py-2 rounded-md flex items-center space-x-3 text-sm font-medium transition-colors">
+                        <i class="fas fa-cubes w-4"></i>
+                        <span>Материалы</span>
+                    </a>
+                    <a href="#" class="text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 px-3 py-2 rounded-md flex items-center space-x-3 text-sm font-medium transition-colors">
+                        <i class="fas fa-calculator w-4"></i>
+                        <span>Смета</span>
+                    </a>
+                    <a href="#" class="text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 px-3 py-2 rounded-md flex items-center space-x-3 text-sm font-medium transition-colors">
+                        <i class="fas fa-chart-bar w-4"></i>
+                        <span>Отчеты</span>
+                    </a>
+                </nav>
+
+                <!-- Export Actions -->
+                <div class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                    <h3 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Экспорт</h3>
+                    <div class="space-y-2">
+                        <button class="w-full text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 px-3 py-2 rounded-md flex items-center space-x-3 text-sm transition-colors" data-event="click:exportPDF">
+                            <i class="fas fa-file-pdf text-error w-4"></i>
+                            <span>Экспорт PDF</span>
+                        </button>
+                        <button class="w-full text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 px-3 py-2 rounded-md flex items-center space-x-3 text-sm transition-colors" data-event="click:exportExcel">
+                            <i class="fas fa-file-excel text-success w-4"></i>
+                            <span>Экспорт Excel</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </aside>
+        <!-- @END_COMPONENT: Sidebar -->
+
+        <!-- Main Content Area -->
+        <main class="flex-1 overflow-hidden">
+            <div class="h-full flex flex-col">
+                
+                <!-- Page Header -->
+                <div class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h2 class="text-lg font-semibold">Виды работ</h2>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Управление видами работ и расчёт стоимости</p>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <button class="bg-success hover:bg-green-600 text-white px-4 py-2 rounded-md flex items-center space-x-2 text-sm transition-colors" data-event="click:calculateAll">
+                                <i class="fas fa-calculator"></i>
+                                <span>Рассчитать</span>
+                            </button>
+                            <button class="bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-md flex items-center space-x-2 text-sm transition-colors" data-event="click:addWork">
+                                <i class="fas fa-plus"></i>
+                                <span>Добавить работу</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Content -->
+                <div class="flex-1 overflow-y-auto p-6">
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
+                        
+                        <!-- Works List -->
+                        <!-- @COMPONENT: WorksList [table with work items] -->
+                        <div class="lg:col-span-2 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+                            <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                                <h3 class="font-medium flex items-center space-x-2">
+                                    <i class="fas fa-hammer text-primary"></i>
+                                    <span>Перечень работ</span>
+                                </h3>
+                            </div>
+                            
+                            <div class="overflow-x-auto">
+                                <table class="w-full">
+                                    <thead class="bg-gray-50 dark:bg-gray-700">
+                                        <tr>
+                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Наименование</th>
+                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Ед. изм.</th>
+                                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Объём</th>
+                                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Цена за ед.</th>
+                                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Стоимость</th>
+                                            <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Действия</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                                        <!-- @MAP: workItems.map(item => ( -->
+                                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer" data-event="click:selectWork">
+                                            <td class="px-4 py-3">
+                                                <div class="font-medium text-sm" data-mock="true" data-bind="item.name">Кладка кирпичная стен</div>
+                                                <div class="text-xs text-gray-500 dark:text-gray-400" data-mock="true" data-bind="item.description">Кладка наружных стен толщиной 250мм</div>
+                                            </td>
+                                            <td class="px-4 py-3 text-sm" data-mock="true" data-bind="item.unit">м³</td>
+                                            <td class="px-4 py-3">
+                                                <input type="number" 
+                                                       class="w-20 px-2 py-1 text-right text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-primary focus:border-transparent bg-white dark:bg-gray-700" 
+                                                       value="120" 
+                                                       data-mock="true" 
+                                                       data-bind="item.volume"
+                                                       data-event="change:updateVolume">
+                                            </td>
+                                            <td class="px-4 py-3 text-right text-sm font-medium" data-mock="true" data-bind="item.pricePerUnit">₽ 3,450.00</td>
+                                            <td class="px-4 py-3 text-right text-sm font-bold text-primary" data-mock="true" data-bind="item.totalCost">₽ 414,000.00</td>
+                                            <td class="px-4 py-3 text-center">
+                                                <div class="flex justify-center space-x-2">
+                                                    <button class="text-primary hover:text-primary-dark" data-event="click:editWork">
+                                                        <i class="fas fa-edit"></i>
+                                                    </button>
+                                                    <button class="text-error hover:text-red-600" data-event="click:deleteWork">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        
+                                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
+                                            <td class="px-4 py-3">
+                                                <div class="font-medium text-sm" data-mock="true">Штукатурные работы</div>
+                                                <div class="text-xs text-gray-500 dark:text-gray-400" data-mock="true">Штукатурка стен цементно-песчаным раствором</div>
+                                            </td>
+                                            <td class="px-4 py-3 text-sm" data-mock="true">м²</td>
+                                            <td class="px-4 py-3">
+                                                <input type="number" 
+                                                       class="w-20 px-2 py-1 text-right text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-primary focus:border-transparent bg-white dark:bg-gray-700" 
+                                                       value="480" 
+                                                       data-mock="true">
+                                            </td>
+                                            <td class="px-4 py-3 text-right text-sm font-medium" data-mock="true">₽ 890.00</td>
+                                            <td class="px-4 py-3 text-right text-sm font-bold text-primary" data-mock="true">₽ 427,200.00</td>
+                                            <td class="px-4 py-3 text-center">
+                                                <div class="flex justify-center space-x-2">
+                                                    <button class="text-primary hover:text-primary-dark">
+                                                        <i class="fas fa-edit"></i>
+                                                    </button>
+                                                    <button class="text-error hover:text-red-600">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        
+                                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
+                                            <td class="px-4 py-3">
+                                                <div class="font-medium text-sm" data-mock="true">Устройство кровли</div>
+                                                <div class="text-xs text-gray-500 dark:text-gray-400" data-mock="true">Металлочерепица с утеплением</div>
+                                            </td>
+                                            <td class="px-4 py-3 text-sm" data-mock="true">м²</td>
+                                            <td class="px-4 py-3">
+                                                <input type="number" 
+                                                       class="w-20 px-2 py-1 text-right text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-primary focus:border-transparent bg-white dark:bg-gray-700" 
+                                                       value="250" 
+                                                       data-mock="true">
+                                            </td>
+                                            <td class="px-4 py-3 text-right text-sm font-medium" data-mock="true">₽ 2,150.00</td>
+                                            <td class="px-4 py-3 text-right text-sm font-bold text-primary" data-mock="true">₽ 537,500.00</td>
+                                            <td class="px-4 py-3 text-center">
+                                                <div class="flex justify-center space-x-2">
+                                                    <button class="text-primary hover:text-primary-dark">
+                                                        <i class="fas fa-edit"></i>
+                                                    </button>
+                                                    <button class="text-error hover:text-red-600">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <!-- @END_MAP )) -->
+                                    </tbody>
+                                </table>
+                            </div>
+                            
+                            <!-- Totals Row -->
+                            <div class="bg-gray-50 dark:bg-gray-700 px-6 py-4 border-t border-gray-200 dark:border-gray-700">
+                                <div class="flex justify-between items-center">
+                                    <span class="font-medium">Итого по работам:</span>
+                                    <span class="text-lg font-bold text-primary" data-mock="true" data-bind="totalWorksCost">₽ 1,378,700.00</span>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- @END_COMPONENT: WorksList -->
+
+                        <!-- Work Details & Materials -->
+                        <!-- @COMPONENT: WorkDetails [selected work materials and consumption norms] -->
+                        <div class="space-y-6">
+                            <!-- Selected Work Info -->
+                            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+                                <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                                    <h3 class="font-medium flex items-center space-x-2">
+                                        <i class="fas fa-info-circle text-primary"></i>
+                                        <span>Выбранная работа</span>
+                                    </h3>
+                                </div>
+                                <div class="p-6">
+                                    <div class="space-y-3">
+                                        <div>
+                                            <span class="text-sm text-gray-500 dark:text-gray-400">Наименование:</span>
+                                            <div class="font-medium" data-mock="true" data-bind="selectedWork.name">Кладка кирпичная стен</div>
+                                        </div>
+                                        <div>
+                                            <span class="text-sm text-gray-500 dark:text-gray-400">Единица измерения:</span>
+                                            <div class="font-medium" data-mock="true" data-bind="selectedWork.unit">м³</div>
+                                        </div>
+                                        <div>
+                                            <span class="text-sm text-gray-500 dark:text-gray-400">Объём:</span>
+                                            <div class="font-medium text-primary" data-mock="true" data-bind="selectedWork.volume">120 м³</div>
+                                        </div>
+                                        <div>
+                                            <span class="text-sm text-gray-500 dark:text-gray-400">Стоимость:</span>
+                                            <div class="font-bold text-lg text-primary" data-mock="true" data-bind="selectedWork.totalCost">₽ 414,000.00</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Materials for Selected Work -->
+                            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+                                <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+                                    <h3 class="font-medium flex items-center space-x-2">
+                                        <i class="fas fa-cubes text-primary"></i>
+                                        <span>Материалы</span>
+                                    </h3>
+                                    <button class="text-primary hover:text-primary-dark text-sm" data-event="click:addMaterial">
+                                        <i class="fas fa-plus mr-1"></i>Добавить
+                                    </button>
+                                </div>
+                                <div class="divide-y divide-gray-200 dark:divide-gray-700">
+                                    <!-- @MAP: selectedWorkMaterials.map(material => ( -->
+                                    <div class="p-4">
+                                        <div class="flex justify-between items-start">
+                                            <div class="flex-1">
+                                                <div class="font-medium text-sm" data-mock="true" data-bind="material.name">Кирпич керамический М150</div>
+                                                <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                                    <span data-mock="true" data-bind="material.consumptionNorm">390 шт/м³</span>
+                                                    <span class="mx-2">•</span>
+                                                    <span data-mock="true" data-bind="material.pricePerUnit">₽ 18.50/шт</span>
+                                                </div>
+                                                <div class="text-sm font-medium text-primary mt-1">
+                                                    Требуется: <span data-mock="true" data-bind="material.requiredQuantity">46,800 шт</span>
+                                                </div>
+                                            </div>
+                                            <div class="text-right ml-4">
+                                                <div class="font-bold text-sm" data-mock="true" data-bind="material.totalCost">₽ 865,800</div>
+                                                <button class="text-gray-400 hover:text-error mt-1" data-event="click:removeMaterial">
+                                                    <i class="fas fa-trash text-xs"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="p-4">
+                                        <div class="flex justify-between items-start">
+                                            <div class="flex-1">
+                                                <div class="font-medium text-sm" data-mock="true">Раствор цементный М100</div>
+                                                <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                                    <span data-mock="true">0.24 м³/м³</span>
+                                                    <span class="mx-2">•</span>
+                                                    <span data-mock="true">₽ 3,200.00/м³</span>
+                                                </div>
+                                                <div class="text-sm font-medium text-primary mt-1">
+                                                    Требуется: <span data-mock="true">28.8 м³</span>
+                                                </div>
+                                            </div>
+                                            <div class="text-right ml-4">
+                                                <div class="font-bold text-sm" data-mock="true">₽ 92,160</div>
+                                                <button class="text-gray-400 hover:text-error mt-1">
+                                                    <i class="fas fa-trash text-xs"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- @END_MAP )) -->
+                                </div>
+                                <div class="bg-gray-50 dark:bg-gray-700 px-6 py-4 border-t border-gray-200 dark:border-gray-700">
+                                    <div class="flex justify-between items-center">
+                                        <span class="font-medium">Материалы для работы:</span>
+                                        <span class="font-bold text-primary" data-mock="true" data-bind="selectedWorkMaterialsCost">₽ 957,960</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- @END_COMPONENT: WorkDetails -->
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Project Summary Panel -->
+    <!-- @COMPONENT: ProjectSummary [fixed bottom panel with totals] -->
+    <div class="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 px-6 py-4">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-8">
+                <div class="text-center">
+                    <div class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">Проект</div>
+                    <div class="font-bold text-lg" data-mock="true" data-bind="project.name">Офисное здание А1</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">Работы</div>
+                    <div class="font-bold text-lg text-primary" data-mock="true" data-bind="project.worksCost">₽ 1,378,700</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">Материалы</div>
+                    <div class="font-bold text-lg text-secondary" data-mock="true" data-bind="project.materialsCost">₽ 2,145,360</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">Итого</div>
+                    <div class="font-bold text-xl text-success" data-mock="true" data-bind="project.totalCost">₽ 3,524,060</div>
+                </div>
+            </div>
+            
+            <div class="flex items-center space-x-4">
+                <div class="text-right">
+                    <div class="text-xs text-gray-500 dark:text-gray-400">Последнее изменение</div>
+                    <div class="text-sm" data-mock="true" data-bind="project.lastModified">15.12.2023 14:25</div>
+                </div>
+                <div class="flex space-x-2">
+                    <button class="bg-success hover:bg-green-600 text-white px-4 py-2 rounded-md flex items-center space-x-2 transition-colors" data-event="click:generateReport">
+                        <i class="fas fa-file-alt"></i>
+                        <span>Смета</span>
+                    </button>
+                    <button class="bg-error hover:bg-red-600 text-white px-4 py-2 rounded-md flex items-center space-x-2 transition-colors" data-event="click:exportPDF">
+                        <i class="fas fa-file-pdf"></i>
+                        <span>PDF</span>
+                    </button>
+                    <button class="bg-success hover:bg-green-600 text-white px-4 py-2 rounded-md flex items-center space-x-2 transition-colors" data-event="click:exportExcel">
+                        <i class="fas fa-file-excel"></i>
+                        <span>Excel</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- @END_COMPONENT: ProjectSummary -->
+
+    <!-- Modal: Add/Edit Work -->
+    <!-- @COMPONENT: WorkModal [modal dialog for adding/editing work items] -->
+    <div id="workModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center" data-event="click:closeModal">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl mx-4" onclick="event.stopPropagation()">
+            <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                <h3 class="text-lg font-semibold flex items-center space-x-2">
+                    <i class="fas fa-plus text-primary"></i>
+                    <span data-bind="modal.title">Добавить вид работы</span>
+                </h3>
+            </div>
+            
+            <div class="p-6">
+                <form class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Наименование работы *
+                            </label>
+                            <input type="text" 
+                                   class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-primary focus:border-transparent bg-white dark:bg-gray-700" 
+                                   placeholder="Например: Кладка кирпичная стен"
+                                   data-bind="workForm.name">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Единица измерения *
+                            </label>
+                            <select class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-primary focus:border-transparent bg-white dark:bg-gray-700" 
+                                    data-bind="workForm.unit">
+                                <option value="">Выберите единицу</option>
+                                <option value="м²">м² - квадратный метр</option>
+                                <option value="м³">м³ - кубический метр</option>
+                                <option value="м">м - погонный метр</option>
+                                <option value="шт">шт - штука</option>
+                                <option value="т">т - тонна</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Цена за единицу (₽) *
+                            </label>
+                            <input type="number" 
+                                   step="0.01" 
+                                   class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-primary focus:border-transparent bg-white dark:bg-gray-700" 
+                                   placeholder="0.00"
+                                   data-bind="workForm.pricePerUnit">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Себестоимость (₽)
+                            </label>
+                            <input type="number" 
+                                   step="0.01" 
+                                   class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-primary focus:border-transparent bg-white dark:bg-gray-700" 
+                                   placeholder="0.00"
+                                   data-bind="workForm.costPrice">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Объём
+                            </label>
+                            <input type="number" 
+                                   step="0.01" 
+                                   class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-primary focus:border-transparent bg-white dark:bg-gray-700" 
+                                   placeholder="0.00"
+                                   data-bind="workForm.volume">
+                        </div>
+                        
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Описание
+                            </label>
+                            <textarea class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-primary focus:border-transparent bg-white dark:bg-gray-700" 
+                                      rows="3" 
+                                      placeholder="Дополнительное описание работы"
+                                      data-bind="workForm.description"></textarea>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            
+            <div class="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex justify-end space-x-3">
+                <button class="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors" 
+                        data-event="click:closeModal">
+                    Отмена
+                </button>
+                <button class="px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-md transition-colors" 
+                        data-event="click:saveWork">
+                    Сохранить
+                </button>
+            </div>
+        </div>
+    </div>
+    <!-- @END_COMPONENT: WorkModal -->
+
+    <!-- Modal: Add Material -->
+    <!-- @COMPONENT: MaterialModal [modal for adding materials to work] -->
+    <div id="materialModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-xl mx-4" onclick="event.stopPropagation()">
+            <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                <h3 class="text-lg font-semibold flex items-center space-x-2">
+                    <i class="fas fa-cubes text-primary"></i>
+                    <span>Добавить материал</span>
+                </h3>
+            </div>
+            
+            <div class="p-6">
+                <form class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Материал *
+                        </label>
+                        <select class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-primary focus:border-transparent bg-white dark:bg-gray-700">
+                            <option value="">Выберите материал</option>
+                            <option value="brick" data-mock="true">Кирпич керамический М150</option>
+                            <option value="cement" data-mock="true">Цемент ПЦ 400</option>
+                            <option value="sand" data-mock="true">Песок строительный</option>
+                            <option value="concrete" data-mock="true">Бетон М200</option>
+                        </select>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Норма расхода *
+                            </label>
+                            <input type="number" 
+                                   step="0.001" 
+                                   class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-primary focus:border-transparent bg-white dark:bg-gray-700" 
+                                   placeholder="0.000">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Единица расхода
+                            </label>
+                            <input type="text" 
+                                   class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-primary focus:border-transparent bg-white dark:bg-gray-700" 
+                                   placeholder="шт/м³"
+                                   readonly>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-md">
+                        <div class="text-sm text-gray-600 dark:text-gray-400">
+                            <div class="flex justify-between">
+                                <span>Цена за единицу:</span>
+                                <span class="font-medium" data-mock="true">₽ 18.50/шт</span>
+                            </div>
+                            <div class="flex justify-between mt-1">
+                                <span>Требуется на объём:</span>
+                                <span class="font-medium" data-mock="true">46,800 шт</span>
+                            </div>
+                            <div class="flex justify-between mt-2 pt-2 border-t border-gray-300 dark:border-gray-600">
+                                <span class="font-medium">Стоимость материала:</span>
+                                <span class="font-bold text-primary" data-mock="true">₽ 865,800</span>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            
+            <div class="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex justify-end space-x-3">
+                <button class="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors">
+                    Отмена
+                </button>
+                <button class="px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-md transition-colors">
+                    Добавить
+                </button>
+            </div>
+        </div>
+    </div>
+    <!-- @END_COMPONENT: MaterialModal -->
+
+    <script>
+    (function() {
+        'use strict';
+        
+        // Theme Toggle Functionality
+        function initThemeToggle() {
+            const themeToggle = document.getElementById('themeToggle');
+            const html = document.documentElement;
+            
+            // Check for saved theme preference or default to light mode
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            html.classList.toggle('dark', savedTheme === 'dark');
+            updateThemeIcon(savedTheme);
+            
+            themeToggle.addEventListener('click', () => {
+                const isDark = html.classList.contains('dark');
+                const newTheme = isDark ? 'light' : 'dark';
+                
+                html.classList.toggle('dark', !isDark);
+                localStorage.setItem('theme', newTheme);
+                updateThemeIcon(newTheme);
+            });
+        }
+        
+        function updateThemeIcon(theme) {
+            const icon = document.querySelector('#themeToggle i');
+            icon.className = theme === 'dark' ? 'fas fa-sun text-gray-600 dark:text-gray-300' : 'fas fa-moon text-gray-600 dark:text-gray-300';
+        }
+        
+        // Modal Management
+        function initModals() {
+            // TODO: Implement modal show/hide functionality
+            // TODO: Handle form submissions and validation
+            // TODO: Connect to data management system
+            
+            const modals = document.querySelectorAll('[id$="Modal"]');
+            modals.forEach(modal => {
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) {
+                        hideModal(modal);
+                    }
+                });
+            });
+        }
+        
+        function showModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+            }
+        }
+        
+        function hideModal(modal) {
+            if (typeof modal === 'string') {
+                modal = document.getElementById(modal);
+            }
+            if (modal) {
+                modal.classList.add('hidden');
+                document.body.style.overflow = '';
+            }
+        }
+        
+        // Data Management (Mock)
+        function initDataManagement() {
+            // TODO: Implement actual data persistence
+            // TODO: Connect to SQLite or JSON file storage
+            // TODO: Handle CRUD operations for works and materials
+            
+            console.log('Data management system initialized');
+        }
+        
+        // Calculation Engine
+        function initCalculations() {
+            // TODO: Implement real-time calculation logic
+            // TODO: Update totals when volumes or prices change
+            // TODO: Calculate material requirements based on consumption norms
+            
+            const volumeInputs = document.querySelectorAll('input[type="number"]');
+            volumeInputs.forEach(input => {
+                input.addEventListener('change', () => {
+                    // TODO: Trigger recalculation
+                    console.log('Recalculating costs...');
+                });
+            });
+        }
+        
+        // Export Functionality
+        function initExportFeatures() {
+            // TODO: Implement PDF generation
+            // TODO: Implement Excel export
+            // TODO: Create formatted reports
+            
+            console.log('Export features initialized');
+        }
+        
+        // Initialize all functionality
+        document.addEventListener('DOMContentLoaded', () => {
+            initThemeToggle();
+            initModals();
+            initDataManagement();
+            initCalculations();
+            initExportFeatures();
+        });
+        
+        // Global functions for demo purposes
+        window.showAddWorkModal = () => showModal('workModal');
+        window.showAddMaterialModal = () => showModal('materialModal');
+        
+    })();
+    </script>
+
+</body>
+</html>
