@@ -249,6 +249,7 @@ export async function importHierarchicalStructure(buffer: Buffer): Promise<Impor
   let sectionsCreated = 0;
   let tasksCreated = 0;
 
+  console.log('=== ИМПОРТ: всего записей для обработки:', records.length);
   // Сортируем по уровню иерархии - сначала разделы, потом подразделы  
   const sectionsAndSubsections = records.filter(r => r.type === 'section' || r.type === 'subsection')
     .sort((a, b) => {
@@ -257,18 +258,17 @@ export async function importHierarchicalStructure(buffer: Buffer): Promise<Impor
       return aLevel - bLevel;
     });
 
+  console.log('=== ИМПОРТ: разделов и подразделов для создания:', sectionsAndSubsections.length);
   // Создаем разделы и подразделы в правильном порядке
   for (const record of sectionsAndSubsections) {
     try {
       const cleanIndex = extractCleanIndex(record.index);
       const parentIndex = findParentIndex(cleanIndex);
       let parentId: string | null = null;
-      
       if (parentIndex) {
         parentId = sectionMap.get(parentIndex) || null;
         if (!parentId) {
-          // Если родительский раздел не найден, создаем его автоматически
-          console.log(`Автосоздание родительского раздела "${parentIndex}" для "${record.index}"`);
+          console.log(`[IMPORT] Автосоздание родительского раздела "${parentIndex}" для "${record.index}"`);
           const autoSectionData = {
             index: parentIndex,
             displayIndex: parentIndex + '-',
@@ -276,14 +276,13 @@ export async function importHierarchicalStructure(buffer: Buffer): Promise<Impor
             parentId: null,
             orderNum: record.orderNum - 0.5
           };
-          
           const autoCreatedSection = await storage.createSection(autoSectionData);
           sectionMap.set(parentIndex, autoCreatedSection.id);
           parentId = autoCreatedSection.id;
           sectionsCreated++;
+          console.log(`[IMPORT] Родительский раздел создан:`, autoCreatedSection);
         }
       }
-      
       const sectionData = {
         index: cleanIndex,
         displayIndex: record.index,
@@ -291,11 +290,10 @@ export async function importHierarchicalStructure(buffer: Buffer): Promise<Impor
         parentId,
         orderNum: record.orderNum
       };
-      
       const createdSection = await storage.createSection(sectionData);
       sectionMap.set(cleanIndex, createdSection.id);
       sectionsCreated++;
-      
+      console.log(`[IMPORT] Раздел/подраздел создан:`, createdSection);
     } catch (error) {
       let details = '';
       if (error instanceof Error) {
@@ -311,108 +309,100 @@ export async function importHierarchicalStructure(buffer: Buffer): Promise<Impor
       } else {
         details = String(error);
       }
-      console.error(`Ошибка при создании раздела/подраздела (строка ${record.orderNum + 2}):`, details, record);
+      console.error(`[IMPORT] Ошибка при создании раздела/подраздела (строка ${record.orderNum + 2}):`, details, record);
       errors.push(`Строка ${record.orderNum + 2}: ${details}`);
     }
   }
-  
+
   // Затем создаем все работы
-  for (const record of records) {
-    if (record.type === 'task') {
-      try {
-        const cleanIndex = extractCleanIndex(record.index);
-        const parentIndex = findParentIndex(cleanIndex);
-        
-        if (!parentIndex) {
-          errors.push(`Строка ${record.orderNum + 2}: работа "${record.index}" должна принадлежать разделу или подразделу`);
-          continue;
-        }
-        
-        let parentSectionId = sectionMap.get(parentIndex);
-        if (!parentSectionId) {
-          // Автоматически создаем отсутствующий подраздел
-          console.log(`Автосоздание подраздела "${parentIndex}" для работы "${record.index}"`);
-          try {
-            const autoSectionData = {
-              index: parentIndex,
-              displayIndex: parentIndex + '-',
-              title: `${parentIndex} Автоматически созданный подраздел`,
-              parentId: null, // Определим родителя позже если нужно
-              orderNum: record.orderNum - 0.5 // Ставим перед текущей работой
-            };
-            
-            const createdSection = await storage.createSection(autoSectionData);
-            sectionMap.set(parentIndex, createdSection.id);
-            parentSectionId = createdSection.id;
-            sectionsCreated++;
-            
-          } catch (createError) {
-            let details = '';
-            if (createError instanceof Error) {
-              details = createError.message + (createError.stack ? `\nStack: ${createError.stack}` : '');
-            } else if (typeof createError === 'string') {
-              details = createError;
-            } else if (createError && typeof createError === 'object') {
-              try {
-                details = JSON.stringify(createError, Object.getOwnPropertyNames(createError));
-              } catch (e) {
-                details = String(createError);
-              }
-            } else {
+  let tasksToCreate = records.filter(r => r.type === 'task');
+  console.log('=== ИМПОРТ: работ для создания:', tasksToCreate.length);
+  for (const record of tasksToCreate) {
+    try {
+      const cleanIndex = extractCleanIndex(record.index);
+      const parentIndex = findParentIndex(cleanIndex);
+      if (!parentIndex) {
+        errors.push(`Строка ${record.orderNum + 2}: работа "${record.index}" должна принадлежать разделу или подразделу`);
+        console.log(`[IMPORT] Пропущена работа без родителя:`, record);
+        continue;
+      }
+      let parentSectionId = sectionMap.get(parentIndex);
+      if (!parentSectionId) {
+        console.log(`[IMPORT] Автосоздание подраздела "${parentIndex}" для работы "${record.index}"`);
+        try {
+          const autoSectionData = {
+            index: parentIndex,
+            displayIndex: parentIndex + '-',
+            title: `${parentIndex} Автоматически созданный подраздел`,
+            parentId: null,
+            orderNum: record.orderNum - 0.5
+          };
+          const createdSection = await storage.createSection(autoSectionData);
+          sectionMap.set(parentIndex, createdSection.id);
+          parentSectionId = createdSection.id;
+          sectionsCreated++;
+          console.log(`[IMPORT] Подраздел создан:`, createdSection);
+        } catch (createError) {
+          let details = '';
+          if (createError instanceof Error) {
+            details = createError.message + (createError.stack ? `\nStack: ${createError.stack}` : '');
+          } else if (typeof createError === 'string') {
+            details = createError;
+          } else if (createError && typeof createError === 'object') {
+            try {
+              details = JSON.stringify(createError, Object.getOwnPropertyNames(createError));
+            } catch (e) {
               details = String(createError);
             }
-            console.error(`Ошибка при автосоздании подраздела (строка ${record.orderNum + 2}):`, details, record);
-            errors.push(`Строка ${record.orderNum + 2}: не удалось создать подраздел "${parentIndex}" для работы "${record.index}": ${details}`);
-            continue;
+          } else {
+            details = String(createError);
           }
-        }
-        
-        // Для работ обязательны единица измерения и себестоимость
-        if (!record.unit || record.unit === "") {
-          console.log(`Пропускаем работу без единицы измерения: "${record.index}"`);
+          console.error(`[IMPORT] Ошибка при автосоздании подраздела (строка ${record.orderNum + 2}):`, details, record);
+          errors.push(`Строка ${record.orderNum + 2}: не удалось создать подраздел "${parentIndex}" для работы "${record.index}": ${details}`);
           continue;
         }
-        
-        // Проверяем наличие себестоимости
-        if (!record.costPrice || record.costPrice === "") {
-          console.log(`Пропускаем работу без себестоимости: "${record.index}"`);
-          continue;
-        }
-        
-        const taskData = {
-          index: cleanIndex,
-          displayIndex: record.index,
-          title: record.title,
-          unit: record.unit,
-          costPrice: record.costPrice,
-          parentSectionId,
-          orderNum: record.orderNum
-        };
-        
-        await storage.createTask(taskData as InsertTask);
-        tasksCreated++;
-        
-      } catch (error) {
-        let details = '';
-        if (error instanceof Error) {
-          details = error.message + (error.stack ? `\nStack: ${error.stack}` : '');
-        } else if (typeof error === 'string') {
-          details = error;
-        } else if (error && typeof error === 'object') {
-          try {
-            details = JSON.stringify(error, Object.getOwnPropertyNames(error));
-          } catch (e) {
-            details = String(error);
-          }
-        } else {
+      }
+      if (!record.unit || record.unit === "") {
+        console.log(`[IMPORT] Пропускаем работу без единицы измерения: "${record.index}"`);
+        continue;
+      }
+      if (!record.costPrice || record.costPrice === "") {
+        console.log(`[IMPORT] Пропускаем работу без себестоимости: "${record.index}"`);
+        continue;
+      }
+      const taskData = {
+        index: cleanIndex,
+        displayIndex: record.index,
+        title: record.title,
+        unit: record.unit,
+        costPrice: record.costPrice,
+        parentSectionId,
+        orderNum: record.orderNum
+      };
+      const createdTask = await storage.createTask(taskData as InsertTask);
+      tasksCreated++;
+      console.log(`[IMPORT] Работа создана:`, createdTask);
+    } catch (error) {
+      let details = '';
+      if (error instanceof Error) {
+        details = error.message + (error.stack ? `\nStack: ${error.stack}` : '');
+      } else if (typeof error === 'string') {
+        details = error;
+      } else if (error && typeof error === 'object') {
+        try {
+          details = JSON.stringify(error, Object.getOwnPropertyNames(error));
+        } catch (e) {
           details = String(error);
         }
-        console.error(`Ошибка при создании работы (строка ${record.orderNum + 2}):`, details, record);
-        errors.push(`Строка ${record.orderNum + 2}: ${details}`);
+      } else {
+        details = String(error);
       }
+      console.error(`[IMPORT] Ошибка при создании работы (строка ${record.orderNum + 2}):`, details, record);
+      errors.push(`Строка ${record.orderNum + 2}: ${details}`);
     }
   }
-  
+
+  console.log('=== ИМПОРТ: итог — создано разделов:', sectionsCreated, 'работ:', tasksCreated, 'ошибок:', errors.length);
   return {
     imported: {
       sections: sectionsCreated,
