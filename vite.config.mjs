@@ -1,13 +1,10 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
-import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 
-export default defineConfig({
   plugins: [
     react(),
-    runtimeErrorOverlay(),
-    // cartographer плагин убран для совместимости с CJS/ESM на Render
+    // runtimeErrorOverlay убран для production и серверной сборки
   ],
   resolve: {
     alias: {
