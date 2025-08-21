@@ -2,23 +2,13 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-const plugins = [
-  react(),
-  runtimeErrorOverlay(),
-];
-
-if (process.env.NODE_ENV !== "production" && process.env.REPL_ID !== undefined) {
-  const { cartographer } = await import("@replit/vite-plugin-cartographer");
-  plugins.push(cartographer());
-}
 
 export default defineConfig({
-  plugins,
+  plugins: [
+    react(),
+    runtimeErrorOverlay(),
+    // cartographer плагин убран для совместимости с CJS/ESM на Render
+  ],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "client", "src"),
