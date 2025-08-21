@@ -300,8 +300,13 @@ export async function importHierarchicalStructure(buffer: Buffer): Promise<Impor
       let details = '';
       if (error instanceof Error) {
         details = error.message + (error.stack ? `\nStack: ${error.stack}` : '');
-      } else {
+      } else if (typeof error === 'string') {
+        details = error;
+      } else if (error && typeof error === 'object') {
         details = JSON.stringify(error);
+        if (details === '{}') details = String(error);
+      } else {
+        details = String(error);
       }
       console.error(`Ошибка при создании раздела/подраздела (строка ${record.orderNum + 2}):`, details, record);
       errors.push(`Строка ${record.orderNum + 2}: ${details}`);
@@ -342,8 +347,13 @@ export async function importHierarchicalStructure(buffer: Buffer): Promise<Impor
             let details = '';
             if (createError instanceof Error) {
               details = createError.message + (createError.stack ? `\nStack: ${createError.stack}` : '');
-            } else {
+            } else if (typeof createError === 'string') {
+              details = createError;
+            } else if (createError && typeof createError === 'object') {
               details = JSON.stringify(createError);
+              if (details === '{}') details = String(createError);
+            } else {
+              details = String(createError);
             }
             console.error(`Ошибка при автосоздании подраздела (строка ${record.orderNum + 2}):`, details, record);
             errors.push(`Строка ${record.orderNum + 2}: не удалось создать подраздел "${parentIndex}" для работы "${record.index}": ${details}`);
@@ -380,8 +390,13 @@ export async function importHierarchicalStructure(buffer: Buffer): Promise<Impor
         let details = '';
         if (error instanceof Error) {
           details = error.message + (error.stack ? `\nStack: ${error.stack}` : '');
-        } else {
+        } else if (typeof error === 'string') {
+          details = error;
+        } else if (error && typeof error === 'object') {
           details = JSON.stringify(error);
+          if (details === '{}') details = String(error);
+        } else {
+          details = String(error);
         }
         console.error(`Ошибка при создании работы (строка ${record.orderNum + 2}):`, details, record);
         errors.push(`Строка ${record.orderNum + 2}: ${details}`);
