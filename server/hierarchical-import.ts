@@ -303,8 +303,11 @@ export async function importHierarchicalStructure(buffer: Buffer): Promise<Impor
       } else if (typeof error === 'string') {
         details = error;
       } else if (error && typeof error === 'object') {
-        details = JSON.stringify(error);
-        if (details === '{}') details = String(error);
+        try {
+          details = JSON.stringify(error, Object.getOwnPropertyNames(error));
+        } catch (e) {
+          details = String(error);
+        }
       } else {
         details = String(error);
       }
@@ -350,8 +353,11 @@ export async function importHierarchicalStructure(buffer: Buffer): Promise<Impor
             } else if (typeof createError === 'string') {
               details = createError;
             } else if (createError && typeof createError === 'object') {
-              details = JSON.stringify(createError);
-              if (details === '{}') details = String(createError);
+              try {
+                details = JSON.stringify(createError, Object.getOwnPropertyNames(createError));
+              } catch (e) {
+                details = String(createError);
+              }
             } else {
               details = String(createError);
             }
@@ -393,8 +399,11 @@ export async function importHierarchicalStructure(buffer: Buffer): Promise<Impor
         } else if (typeof error === 'string') {
           details = error;
         } else if (error && typeof error === 'object') {
-          details = JSON.stringify(error);
-          if (details === '{}') details = String(error);
+          try {
+            details = JSON.stringify(error, Object.getOwnPropertyNames(error));
+          } catch (e) {
+            details = String(error);
+          }
         } else {
           details = String(error);
         }
