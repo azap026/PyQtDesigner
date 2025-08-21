@@ -4,7 +4,7 @@ import path from "path";
 import { createServer as createViteServer, createLogger } from "vite";
 import { type Server } from "http";
 import viteConfig from "../vite.config.mjs";
-import { fileURLToPath } from 'url';
+// import { fileURLToPath } from 'url';
 import { nanoid } from "nanoid";
 
 const viteLogger = createLogger();
@@ -46,8 +46,15 @@ export async function setupVite(app: Express, server: Server) {
     const url = req.originalUrl;
 
     try {
-      const __filename = fileURLToPath(import.meta.url);
-      const __dirname = path.dirname(__filename);
+      // const __filename = fileURLToPath(import.meta.url);
+      // const __dirname = path.dirname(__filename);
+      // В CJS доступны стандартные переменные:
+      const clientTemplate = path.resolve(
+        __dirname,
+        "..",
+        "client",
+        "index.html"
+      );
       const clientTemplate = path.resolve(
         __dirname,
         "..",
@@ -71,8 +78,9 @@ export async function setupVite(app: Express, server: Server) {
 }
 
 export function serveStatic(app: Express) {
-  const __filename = fileURLToPath(import.meta.url);
-  const __dirname = path.dirname(__filename);
+  // const __filename = fileURLToPath(import.meta.url);
+  // const __dirname = path.dirname(__filename);
+  // В CJS доступны стандартные переменные:
   const distPath = path.resolve(__dirname, "public");
 
   if (!fs.existsSync(distPath)) {
