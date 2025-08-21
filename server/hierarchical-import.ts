@@ -297,7 +297,14 @@ export async function importHierarchicalStructure(buffer: Buffer): Promise<Impor
       sectionsCreated++;
       
     } catch (error) {
-      errors.push(`Строка ${record.orderNum + 2}: ${error instanceof Error ? error.message : 'неизвестная ошибка'}`);
+      let details = '';
+      if (error instanceof Error) {
+        details = error.message + (error.stack ? `\nStack: ${error.stack}` : '');
+      } else {
+        details = JSON.stringify(error);
+      }
+      console.error(`Ошибка при создании раздела/подраздела (строка ${record.orderNum + 2}):`, details, record);
+      errors.push(`Строка ${record.orderNum + 2}: ${details}`);
     }
   }
   
@@ -332,7 +339,14 @@ export async function importHierarchicalStructure(buffer: Buffer): Promise<Impor
             sectionsCreated++;
             
           } catch (createError) {
-            errors.push(`Строка ${record.orderNum + 2}: не удалось создать подраздел "${parentIndex}" для работы "${record.index}": ${createError instanceof Error ? createError.message : 'неизвестная ошибка'}`);
+            let details = '';
+            if (createError instanceof Error) {
+              details = createError.message + (createError.stack ? `\nStack: ${createError.stack}` : '');
+            } else {
+              details = JSON.stringify(createError);
+            }
+            console.error(`Ошибка при автосоздании подраздела (строка ${record.orderNum + 2}):`, details, record);
+            errors.push(`Строка ${record.orderNum + 2}: не удалось создать подраздел "${parentIndex}" для работы "${record.index}": ${details}`);
             continue;
           }
         }
@@ -363,7 +377,14 @@ export async function importHierarchicalStructure(buffer: Buffer): Promise<Impor
         tasksCreated++;
         
       } catch (error) {
-        errors.push(`Строка ${record.orderNum + 2}: ${error instanceof Error ? error.message : 'неизвестная ошибка'}`);
+        let details = '';
+        if (error instanceof Error) {
+          details = error.message + (error.stack ? `\nStack: ${error.stack}` : '');
+        } else {
+          details = JSON.stringify(error);
+        }
+        console.error(`Ошибка при создании работы (строка ${record.orderNum + 2}):`, details, record);
+        errors.push(`Строка ${record.orderNum + 2}: ${details}`);
       }
     }
   }
