@@ -30,6 +30,7 @@ import { Label } from "@/components/ui/label";
 import type { HierarchicalWorkStructure } from "@shared/schema";
 
 export function HierarchyDatabase() {
+  const [importErrors, setImportErrors] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [editingTask, setEditingTask] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
@@ -65,7 +66,7 @@ export function HierarchyDatabase() {
       
       return response.json();
     },
-    onSuccess: (result: any) => {
+  onSuccess: (result: any) => {
       // Добавляем действие в историю отмены
       addAction({
         description: `Импортирована иерархическая структура: ${result.imported.sections} разделов, ${result.imported.tasks} работ`,
@@ -84,10 +85,7 @@ export function HierarchyDatabase() {
         description: `Импортировано: ${result.imported.sections} разделов, ${result.imported.tasks} работ${result.errors?.length ? `. Ошибок: ${result.errors.length}` : ""}`,
         variant: result.errors?.length ? "destructive" : "default",
       });
-      
-      if (result.errors?.length > 0) {
-        console.error("Import errors:", result.errors);
-      }
+      setImportErrors(result.errors || []);
     },
     onError: (error) => {
       toast({
@@ -626,7 +624,7 @@ export function HierarchyDatabase() {
 
       </div>
 
-      {/* Управление данными */}
+  {/* Управление данными */}
       <Card>
         <CardHeader>
           <CardTitle>Управление данными</CardTitle>
@@ -724,6 +722,25 @@ export function HierarchyDatabase() {
           />
         </CardContent>
       </Card>
+
+      {/* Отображение ошибок импорта */}
+      {importErrors.length > 0 && (
+        <Card className="border-red-400 bg-red-50 dark:bg-red-900/20 mb-4">
+          <CardHeader>
+            <CardTitle className="text-red-700 dark:text-red-300 text-base">Ошибки импорта</CardTitle>
+            <CardDescription className="text-red-600 dark:text-red-200 text-sm">
+              Не удалось импортировать некоторые строки:
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ul className="list-disc pl-5 space-y-1">
+              {importErrors.map((err, idx) => (
+                <li key={idx} className="text-red-700 dark:text-red-200 text-xs">{err}</li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Поиск */}
       <Card>
