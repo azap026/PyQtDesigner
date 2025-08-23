@@ -36,7 +36,7 @@ for _, row in df.iterrows():
     try:
         c.execute('''
             INSERT INTO materials (
-                id, name, unit, price_per_unit, supplier, notes, image_url, product_url,
+                id, name, unit, price, supplier, notes, image_url, product_url,
                 consumption_rate, consumption_unit, weight_per_unit, weight_unit
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', (
@@ -66,14 +66,14 @@ c = conn.cursor()
 for _, row in df.iterrows():
     c.execute('''
         INSERT INTO materials (
-            id, name, unit, price_per_unit, supplier, notes, image_url, product_url,
+            id, name, unit, price, supplier, notes, image_url, product_url,
             consumption_rate, consumption_unit, weight_per_unit, weight_unit
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ''', (
         str(uuid.uuid4()),
         safe_str(row['Наименование']),
         safe_str(row['Ед.Изм']),
-            safe_float(row['Цена']),
+        safe_float(row['Цена']),
         None,
         None,
         safe_str(row['Ссылка на картинку']),

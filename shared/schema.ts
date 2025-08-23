@@ -16,7 +16,7 @@ export const materials = pgTable("materials", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull(),
   unit: text("unit").notNull(), // м², м³, шт, т, кг
-  pricePerUnit: decimal("price_per_unit", { precision: 10, scale: 2 }).notNull(),
+  price: decimal("price", { precision: 10, scale: 2 }).notNull(),
   supplier: text("supplier"),
   notes: text("notes"),
   imageUrl: text("image_url"), // ссылка на картинку
@@ -35,7 +35,7 @@ export const workItems = pgTable("work_items", {
   name: text("name").notNull(),
   description: text("description"),
   unit: text("unit").notNull(), // м², м³, шт, т, кг
-  pricePerUnit: decimal("price_per_unit", { precision: 10, scale: 2 }).notNull(),
+  price: decimal("price", { precision: 10, scale: 2 }).notNull(),
   costPrice: decimal("cost_price", { precision: 10, scale: 2 }),
   volume: decimal("volume", { precision: 10, scale: 3 }).default("0"),
   workCode: text("work_code"), // Код работы для связи с иерархической структурой (например: 2.9, 2.10)
