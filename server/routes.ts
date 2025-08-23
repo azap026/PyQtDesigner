@@ -1,3 +1,4 @@
+import { autoImportMaterials } from "./auto-import-materials";
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import multer from "multer";
@@ -25,6 +26,8 @@ const upload = multer({
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Автоматический импорт материалов с созданием структуры
+  app.post("/api/materials/import/auto", ...autoImportMaterials);
   // Projects
   app.get("/api/projects", async (req, res) => {
     try {
