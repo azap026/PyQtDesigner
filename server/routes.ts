@@ -401,7 +401,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Download template
   const path = require('path');
   app.get("/api/materials/template", (req, res) => {
-    const filePath = path.join(__dirname, '..', 'template_materials.csv');
+    const filePath = path.resolve(process.cwd(), 'template_materials.csv');
     res.download(filePath, 'template_materials.csv');
   });
 
