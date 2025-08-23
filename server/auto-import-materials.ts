@@ -42,12 +42,21 @@ export const autoImportMaterials = [
         await client.query(createSql);
         await client.query(alterSql);
         // Импортируем данные
+        let success = 0;
+        let errors = 0;
         for (const row of data) {
           const keys = Object.keys(row);
           const values = keys.map(k => row[k]);
           const placeholders = keys.map((_, i) => `$${i + 1}`).join(', ');
-          const insertSql = `INSERT INTO materials (${keys.map(k => `"${k}"`).join(', ')}) VALUES (${placeholders})`;
-          await client.query(insertSql, values);
+          const insertSql = `INSERT INTO materials (${keys.map(k => `\"${k}\"`).join(', ')}) VALUES (${placeholders})`;
+          try {
+            await client.query(insertSql, values);
+            success++;
+          } catch (e) {
+            errors++;
+            console.error(`Ошибка при вставке строки:`, row);
+            console.error(e);
+          }
         }
         await client.query('COMMIT');
       } catch (e) {
