@@ -399,70 +399,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Download template
+  const path = require('path');
   app.get("/api/materials/template", (req, res) => {
-    try {
-      const templateData = [
-        [
-          "№", 
-          "Наименование", 
-          "Цена", 
-          "Ссылка на картинку", 
-          "Ссылка на товар", 
-          "ЕД.ИЗМ", 
-          "Норма расхода на 1кв.м.", 
-          "Вес на единицу"
-        ],
-        [
-          "1", 
-          "*1150101001 КЕНДИ КАШТАН 340ML", 
-          "7153.50", 
-          "https://lk.teremopt.ru/upload/resize_cache/iblock/", 
-          "https://lk.teremopt.ru/catalogue/detail.php?ID=12202", 
-          "шт", 
-          "1.2", 
-          "0.5"
-        ],
-        [
-          "2", 
-          "*1160033100 КЕНДИ МОРКОВЬ Мусс", 
-          "1189.40", 
-          "https://lk.teremopt.ru/upload/resize_cache/iblock/", 
-          "https://lk.teremopt.ru/catalogue/detail.php?ID=12243", 
-          "шт", 
-          "0.8", 
-          "0.3"
-        ]
-      ];
-
-      const workbook = XLSX.utils.book_new();
-      const worksheet = XLSX.utils.aoa_to_sheet(templateData);
-      
-      // Set column widths  
-      worksheet['!cols'] = [
-        { width: 5 },  // №
-        { width: 40 }, // Наименование
-        { width: 15 }, // Цена
-        { width: 35 }, // Ссылка на картинку
-        { width: 35 }, // Ссылка на товар
-        { width: 12 }, // ЕД.ИЗМ
-        { width: 20 }, // Норма расхода
-        { width: 15 }, // Вес на единицу
-      ];
-
-      XLSX.utils.book_append_sheet(workbook, worksheet, "Материалы");
-      
-      const buffer = XLSX.write(workbook, { 
-        type: "buffer", 
-        bookType: "xlsx" 
-      });
-
-      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-      res.setHeader('Content-Disposition', 'attachment; filename=template_material_prices.xlsx');
-      res.send(buffer);
-    } catch (error) {
-      console.error("Error creating template:", error);
-      res.status(500).json({ error: "Failed to create template" });
-    }
+    const filePath = path.join(__dirname, '..', 'template_materials.csv');
+    res.download(filePath, 'template_materials.csv');
   });
 
   // Quick Materials Database Import
