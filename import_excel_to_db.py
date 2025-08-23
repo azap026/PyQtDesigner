@@ -40,10 +40,10 @@ for _, row in df.iterrows():
                 consumption_rate, consumption_unit, weight_per_unit, weight_unit
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', (
-            str(uuid.uuid4()),
-            safe_str(get_col(row, 'Наименование')),
-            safe_str(get_col(row, 'Ед.Изм')),
-            safe_float(get_col(row, 'Цена')),
+                str(uuid.uuid4()),
+                safe_str(get_col(row, 'Наименование')),
+                safe_str(get_col(row, 'Ед.Изм')),
+                safe_float(get_col(row, 'Цена')),
             None,
             None,
             safe_str(get_col(row, 'Ссылка на картинку')),
@@ -73,7 +73,7 @@ for _, row in df.iterrows():
         str(uuid.uuid4()),
         safe_str(row['Наименование']),
         safe_str(row['Ед.Изм']),
-        safe_float(row['Цена']),
+            safe_float(row['Цена']),
         None,
         None,
         safe_str(row['Ссылка на картинку']),

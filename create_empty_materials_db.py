@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS materials (
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
     unit TEXT,
-    price_per_unit REAL,
+    price REAL,
     supplier TEXT,
     notes TEXT,
     image_url TEXT,
