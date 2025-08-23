@@ -55,6 +55,7 @@ for _, row in df.iterrows():
         ))
     except Exception as e:
         print(f'Ошибка при обработке строки: {e}')
+        print(f'Строка данных: {row.to_dict()}')
 
 conn.commit()
 conn.close()
