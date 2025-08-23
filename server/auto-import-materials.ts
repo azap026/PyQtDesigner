@@ -17,15 +17,15 @@ export const autoImportMaterials = [
       // Чтение Excel/CSV
       const workbook = XLSX.read(req.file.buffer, { type: "buffer" });
       const sheetName = workbook.SheetNames[0];
-      const data = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { defval: null });
+  const data = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { defval: null }) as Record<string, any>[];
       if (!data.length) {
         return res.status(400).json({ error: "Файл пустой" });
       }
       // Получаем список столбцов и определяем типы
-      const columns = Object.keys(data[0]);
+  const columns = Object.keys(data[0]);
       // Простейшее определение типа: если все значения числа — numeric, иначе text
       const columnTypes = columns.map(col => {
-        const allNumbers = data.every(row => row[col] === null || /^-?\d+(\.\d+)?$/.test(String(row[col])));
+  const allNumbers = data.every((row: Record<string, any>) => row[col] === null || /^-?\d+(\.\d+)?$/.test(String(row[col])));
         return allNumbers ? 'numeric' : 'text';
       });
       // Формируем SQL для создания таблицы (или добавления недостающих столбцов)
@@ -45,8 +45,8 @@ export const autoImportMaterials = [
         let success = 0;
         let errors = 0;
         for (const row of data) {
-          const keys = Object.keys(row);
-          const values = keys.map(k => row[k]);
+          const keys = Object.keys(row as Record<string, any>);
+          const values = keys.map(k => (row as Record<string, any>)[k]);
           const placeholders = keys.map((_, i) => `$${i + 1}`).join(', ');
           const insertSql = `INSERT INTO materials (${keys.map(k => `\"${k}\"`).join(', ')}) VALUES (${placeholders})`;
           try {

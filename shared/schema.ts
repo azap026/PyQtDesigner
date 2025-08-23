@@ -189,16 +189,6 @@ export const tasksRelations = relations(tasks, ({ one }) => ({
 }));
 
 // Hierarchical types
-export type Section = typeof sections.$inferSelect;
-export type InsertSection = typeof sections.$inferInsert;
-export type Task = typeof tasks.$inferSelect;
-export type InsertTask = typeof tasks.$inferInsert;
-
-export type HierarchicalWorkStructure = {
-  sections: Section[];
-  totalSections: number;
-  totalTasks: number;
-};
 
 // New schemas (must be defined before types that reference them)
 export const insertSectionSchema = createInsertSchema(sections).omit({
