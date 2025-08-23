@@ -48,10 +48,15 @@ export const autoImportMaterials = [
         await client.query('BEGIN');
         await client.query(createSql);
         await client.query(alterSql);
-        // Импортируем данные
+        // Импортируем данные, пропуская строки без price
         let success = 0;
         let errors = 0;
         for (const row of data) {
+          // Пропускаем строки, где price пустой, null или undefined
+          if (!row.price && row.price !== 0 && row.price !== "0") {
+            console.warn('[autoImportMaterials] Пропущена строка без price:', row);
+            continue;
+          }
           const keys = Object.keys(row as Record<string, any>);
           const values = keys.map(k => (row as Record<string, any>)[k]);
           const placeholders = keys.map((_, i) => `$${i + 1}`).join(', ');
